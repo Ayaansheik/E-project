@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "737191600887",
+    "project_id": "bitezi-e5e32",
+    "storage_bucket": "bitezi-e5e32.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:737191600887:android:b799e1952cb4cf3f6329f2",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCN3P8awRqGxwruWuxsTSJDQcWP6ahLi7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:737191600887:android:07e5ecc61c969bf26329f2",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCN3P8awRqGxwruWuxsTSJDQcWP6ahLi7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
