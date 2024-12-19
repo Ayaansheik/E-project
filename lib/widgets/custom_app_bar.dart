@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,16 +23,16 @@ class CustomAppBar extends StatelessWidget {
 
     return SliverAppBar(
       title: Text(
-        'Bookifier',
+        'BOOKIFIER',
         style: TextStyle(
           color: gold,
           backgroundColor: premiumGreen,
-          fontSize: 30,
+          fontSize: 18, // Reduced font size
           fontWeight: FontWeight.bold,
-          letterSpacing: 2.0,
+          letterSpacing: 1.5,
           shadows: [
             Shadow(
-              blurRadius: 10.0,
+              blurRadius: 102.0,
               color: Colors.black.withOpacity(0.5),
               offset: const Offset(0, 2),
             ),
@@ -43,6 +41,7 @@ class CustomAppBar extends StatelessWidget {
       ),
       automaticallyImplyLeading: false,
       backgroundColor: premiumGreen,
+      expandedHeight: 45.0, // Decreased height of the app bar
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
@@ -57,16 +56,17 @@ class CustomAppBar extends StatelessWidget {
           ),
         ),
       ),
-      elevation: 12,
+      elevation: 8,
       pinned: true,
       floating: false,
+
       snap: false,
       actions: [
         IconButton(
           icon: const Icon(
             Icons.shopping_cart,
             color: gold,
-            size: 28,
+            size: 26,
           ),
           onPressed: () {
             Navigator.of(context).pushNamed('/cart');
@@ -76,7 +76,7 @@ class CustomAppBar extends StatelessWidget {
           icon: const Icon(
             Icons.food_bank_rounded,
             color: gold,
-            size: 29,
+            size: 27,
           ),
           onPressed: () {
             Navigator.of(context).pushNamed('/all-products');
@@ -86,16 +86,13 @@ class CustomAppBar extends StatelessWidget {
           icon: const Icon(
             Icons.more_vert,
             color: gold,
-            size: 28,
+            size: 26,
           ),
           onSelected: (value) {
             if (value == 'login') {
               Navigator.of(context).pushNamed('/login');
             } else if (value == 'register') {
               Navigator.of(context).pushNamed('/register');
-            } else if (value == 'signOut') {
-            } else if (value == 'demo') {
-              Navigator.of(context).pushNamed('/demo');
             } else if (value == 'signOut') {
               _signOut(context);
             }
@@ -104,13 +101,6 @@ class CustomAppBar extends StatelessWidget {
             // Check if user is signed in or not
             User? user = FirebaseAuth.instance.currentUser;
             return [
-              const PopupMenuItem(
-                value: 'demo',
-                child: Text(
-                  'Data From Cloud',
-                  style: TextStyle(color: premiumGreen),
-                ),
-              ),
               if (user == null) // Show login and register if not signed in
                 const PopupMenuItem(
                   value: 'login',

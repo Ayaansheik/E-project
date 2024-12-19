@@ -37,7 +37,7 @@ class FoodDeliveryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bitezi',
+      title: 'BOOKIFIER',
       theme: ThemeData(
         primaryColor: const Color(0xFF006400), // premiumGreen
         hintColor: const Color(0xFFFFD700), // gold
@@ -63,7 +63,6 @@ class FoodDeliveryApp extends StatelessWidget {
       home: const SplashScreenHandler(),
       routes: {
         '/demo': (context) => DemoScreen(),
-        // '/home': (context) => BookListWidget(),
         '/home': (context) => HomeScreen(),
         '/details': (context) => const FoodDetailScreen(),
         '/cart': (context) => const CartScreen(),

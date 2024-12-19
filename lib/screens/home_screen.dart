@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/widgets/bottom_app_bar.dart';
+import 'package:myapp/widgets/custom_drawer.dart';
 import 'package:myapp/widgets/famous_author_section.dart';
 import 'package:myapp/widgets/categories_section.dart';
 import '../widgets/book_card.dart';
@@ -6,11 +8,14 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/carousel_banner.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: CustomDrawer(),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -94,6 +99,7 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+      bottomNavigationBar: BottomAppBarWidget(),
     );
   }
 }
