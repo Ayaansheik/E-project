@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Animation controller for the Bitezi logo
+    // Animation controller for the bookifier logo
     _logoController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _logoController.forward();
 
-    // Typing effect for the brand name "Bitezi"
+    // Typing effect for the brand name "bookifier"
     _displayText = "";
     _currentIndex = 0;
 
@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _startTypingEffect() {
-    const text = 'Bitezi';
+    const text = 'Bookifier';
     const duration = Duration(milliseconds: 200); // Adjust speed of typing
 
     Future.delayed(Duration.zero, () {
@@ -134,7 +134,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // Animated Bitezi Logo (typing effect)
+          // Animated bookifier Logo (typing effect)
           Center(
             child: FadeTransition(
               opacity: _logoOpacity,

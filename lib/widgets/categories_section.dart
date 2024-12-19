@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:flutter/widgets.dart';
 import 'package:myapp/screens/categoryproducts_screen.dart';
 
 class CategoryGrid extends StatefulWidget {

@@ -151,9 +151,31 @@ class NewDealCard extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Buttons Section
+            // Buttons Section with Reviews
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Reviews Section
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.star,
+                      color: Colors.orange, // Star color for rating
+                      size: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      // '${foodItem.reviews} Reviews', // Replace with the actual review count from foodItem
+                      '4.3 Reviews', // Replace with the actual review count from foodItem
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Add to Cart Button
                 OutlinedButton(
                   onPressed: () {
                     cartProvider.addItem(
@@ -169,32 +191,11 @@ class NewDealCard extends StatelessWidget {
                       ),
                     );
                   },
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.grey),
-                  ),
-                  child: const Text(
-                    'Add to Cart',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'This feature is not available yet. The app is currently under development.',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                   ),
                   child: const Text(
-                    'Order Now',
+                    'Add to cart',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white,

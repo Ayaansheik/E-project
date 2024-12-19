@@ -1,9 +1,6 @@
 import 'dart:async';
-// ignore: unused_import
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/screens/addproductscreen.dart';
 import 'package:myapp/screens/checkout_screen.dart';
 import 'package:myapp/screens/demo_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
@@ -65,8 +62,8 @@ class FoodDeliveryApp extends StatelessWidget {
       ),
       home: const SplashScreenHandler(),
       routes: {
-        '/addproduct': (context) => AddProductScreen(),
         '/demo': (context) => DemoScreen(),
+        // '/home': (context) => BookListWidget(),
         '/home': (context) => HomeScreen(),
         '/details': (context) => const FoodDetailScreen(),
         '/cart': (context) => const CartScreen(),

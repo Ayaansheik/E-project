@@ -25,7 +25,7 @@ class CustomAppBar extends StatelessWidget {
 
     return SliverAppBar(
       title: Text(
-        'Bitezi',
+        'Bookifier',
         style: TextStyle(
           color: gold,
           backgroundColor: premiumGreen,
@@ -94,9 +94,6 @@ class CustomAppBar extends StatelessWidget {
             } else if (value == 'register') {
               Navigator.of(context).pushNamed('/register');
             } else if (value == 'signOut') {
-            } else if (value == 'addproduct') {
-              Navigator.of(context).pushNamed('/addproduct');
-            } else if (value == 'signOut') {
             } else if (value == 'demo') {
               Navigator.of(context).pushNamed('/demo');
             } else if (value == 'signOut') {
@@ -107,13 +104,6 @@ class CustomAppBar extends StatelessWidget {
             // Check if user is signed in or not
             User? user = FirebaseAuth.instance.currentUser;
             return [
-              const PopupMenuItem(
-                value: 'addproduct',
-                child: Text(
-                  'Add Product',
-                  style: TextStyle(color: premiumGreen),
-                ),
-              ),
               const PopupMenuItem(
                 value: 'demo',
                 child: Text(
