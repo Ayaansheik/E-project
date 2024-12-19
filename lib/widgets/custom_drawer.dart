@@ -47,7 +47,6 @@ class CustomDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).pop(); // Close the drawer
                 Navigator.pushNamed(context, '/home');
-                print("Home pressed of drawer");
               },
             ),
             ListTile(
@@ -67,6 +66,14 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
             ListTile(
+              leading: Icon(Icons.manage_accounts, color: gold),
+              title: Text('User', style: TextStyle(color: gold)),
+              onTap: () {
+                Navigator.of(context).pop(); // Close the drawer
+                Navigator.pushNamed(context, '/cart');
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.food_bank_rounded, color: gold),
               title: Text('All Products', style: TextStyle(color: gold)),
               onTap: () {
@@ -80,13 +87,13 @@ class CustomDrawer extends StatelessWidget {
               leading: Icon(Icons.login, color: gold),
               title: Text('Login', style: TextStyle(color: gold)),
               onTap: () {
+                Navigator.of(context).pop(); // Ensure drawer is closed
                 User? user = FirebaseAuth.instance.currentUser;
                 if (user == null) {
                   Navigator.pushNamed(context, '/login');
                 } else {
                   Navigator.pushNamed(context, '/register');
                 }
-                Navigator.of(context).pop(); // Close the drawer
               },
             ),
 
@@ -95,6 +102,7 @@ class CustomDrawer extends StatelessWidget {
               leading: Icon(Icons.exit_to_app, color: gold),
               title: Text('Sign Out', style: TextStyle(color: gold)),
               onTap: () async {
+                Navigator.of(context).pop(); // Ensure drawer is closed
                 User? user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
                   await FirebaseAuth.instance.signOut();
@@ -103,7 +111,6 @@ class CustomDrawer extends StatelessWidget {
                   );
                   Navigator.pushReplacementNamed(context, '/login');
                 }
-                Navigator.of(context).pop(); // Close the drawer
               },
             ),
           ],

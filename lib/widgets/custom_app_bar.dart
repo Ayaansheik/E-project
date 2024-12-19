@@ -93,6 +93,8 @@ class CustomAppBar extends StatelessWidget {
               Navigator.of(context).pushNamed('/login');
             } else if (value == 'register') {
               Navigator.of(context).pushNamed('/register');
+            } else if (value == 'userprofile') {
+              Navigator.of(context).pushNamed('/userprofile');
             } else if (value == 'signOut') {
               _signOut(context);
             }
@@ -101,6 +103,14 @@ class CustomAppBar extends StatelessWidget {
             // Check if user is signed in or not
             User? user = FirebaseAuth.instance.currentUser;
             return [
+              if (user != null) // Show login and register if not signed in
+                const PopupMenuItem(
+                  value: 'userprofile',
+                  child: Text(
+                    'User Profile',
+                    style: TextStyle(color: premiumGreen),
+                  ),
+                ),
               if (user == null) // Show login and register if not signed in
                 const PopupMenuItem(
                   value: 'login',
