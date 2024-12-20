@@ -17,7 +17,7 @@ class RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _numberController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   File? _profileImage; // For storing the profile image
 
@@ -26,12 +26,12 @@ class RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final username = _usernameController.text.trim();
-    final number = _numberController.text.trim();
+    final phone = _phoneController.text.trim();
 
     if (email.isEmpty ||
         password.isEmpty ||
         username.isEmpty ||
-        number.isEmpty) {
+        phone.isEmpty) {
       _showSnackbar("Please fill in all fields");
       return;
     }
@@ -58,7 +58,7 @@ class RegisterScreenState extends State<RegisterScreen> {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'email': email,
           'username': username,
-          'number': number,
+          'phone': phone,
           'address': {
             'city': null,
             'street': null, // Hidden data
@@ -73,7 +73,7 @@ class RegisterScreenState extends State<RegisterScreen> {
         _emailController.clear();
         _passwordController.clear();
         _usernameController.clear();
-        _numberController.clear();
+        _phoneController.clear();
 
         // Show success message and navigate to login screen
         Navigator.pushReplacement(
@@ -195,7 +195,7 @@ class RegisterScreenState extends State<RegisterScreen> {
                             const SizedBox(height: 15),
                             _buildTextField(
                               context,
-                              controller: _numberController,
+                              controller: _phoneController,
                               hintText: "Phone Number",
                               icon: Icons.phone,
                             ),

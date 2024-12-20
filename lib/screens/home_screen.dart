@@ -11,6 +11,8 @@ class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,6 +25,29 @@ class HomeScreen extends StatelessWidget {
             SliverList(
               delegate: SliverChildListDelegate(
                 [
+                  // Search Bar Section
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search for books or authors...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                        ),
+                      ),
+                      onSubmitted: (query) {
+                        if (query.isNotEmpty) {
+                          Navigator.pushNamed(
+                            context,
+                            '/all-products',
+                            arguments: query, // Pass search query as argument
+                          );
+                        }
+                      },
+                    ),
+                  ),
                   // Carousel Banner Section
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 15.0),

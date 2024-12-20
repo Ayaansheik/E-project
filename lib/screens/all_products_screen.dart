@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../models/food_item.dart'; // Ensure that this is correctly imported
-import '../services/mock_data.dart'; // Make sure this contains mock data
+import '../models/food_item.dart';
+import '../services/mock_data.dart';
 
 class AllProductsScreen extends StatefulWidget {
   const AllProductsScreen({super.key});
@@ -32,11 +32,11 @@ class AllProductsScreenState extends State<AllProductsScreen> {
   @override
   void initState() {
     super.initState();
-    filteredItems = List.from(mockFoodItems); // Initialize with all items
+    _applyFilters(); // Initialize with filtered items
   }
 
-  // Filtering logic
-  void filterItems() {
+  /// Apply all filters to the food items
+  void _applyFilters() {
     setState(() {
       filteredItems = mockFoodItems.where((item) {
         final matchesSearch =
@@ -51,94 +51,98 @@ class AllProductsScreenState extends State<AllProductsScreen> {
     });
   }
 
-  // Handle category change
-  void onCategoryChange(String category) {
-    setState(() {
-      selectedCategory = category;
-    });
-    filterItems(); // Filter immediately
-  }
-
-  // Show the filter bottom sheet
-  void showFilterBottomSheet() {
+  /// Show the filter bottom sheet
+  void _showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height *
-              0.55, // 55% of the screen height
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Filter by Category',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: categories.map((category) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: FilterChip(
-                          label: Text(category),
-                          selected: selectedCategory == category,
-                          onSelected: (bool selected) {
-                            setState(() {
-                              selectedCategory = category;
-                            });
-                            filterItems(); // Apply category filter immediately
-                            Navigator.of(context)
-                                .pop(); // Close the filter modal
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.55,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Filter by Category',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: categories.map((category) {
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: FilterChip(
+                              label: Text(category),
+                              selected: selectedCategory == category,
+                              onSelected: (bool selected) {
+                                setModalState(() {
+                                  selectedCategory = category;
+                                });
+                                _applyFilters(); // Apply filter dynamically
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Price Range',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    RangeSlider(
+                      min: 0,
+                      max: 100,
+                      values: RangeValues(minPrice, maxPrice),
+                      onChanged: (RangeValues values) {
+                        setModalState(() {
+                          minPrice = values.start;
+                          maxPrice = values.end;
+                        });
+                        _applyFilters(); // Apply price filter dynamically
+                      },
+                      divisions: 10,
+                      labels: RangeLabels(
+                        '\$${minPrice.toStringAsFixed(0)}',
+                        '\$${maxPrice.toStringAsFixed(0)}',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    CheckboxListTile(
+                      title: const Text('New Deals Only'),
+                      value: newDealsOnly,
+                      onChanged: (bool? value) {
+                        setModalState(() {
+                          newDealsOnly = value ?? false;
+                        });
+                        _applyFilters(); // Apply new deals filter dynamically
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close the filter modal
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                      child: const Text('Apply Filters'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                const Text('Price Range',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                RangeSlider(
-                  min: 0,
-                  max: 100,
-                  values: RangeValues(minPrice, maxPrice),
-                  onChanged: (RangeValues values) {
-                    setState(() {
-                      minPrice = values.start;
-                      maxPrice = values.end;
-                    });
-                    filterItems(); // Apply price filter immediately
-                  },
-                ),
-                const SizedBox(height: 20),
-                CheckboxListTile(
-                  title: const Text('New Deals Only'),
-                  value: newDealsOnly,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      newDealsOnly = value ?? false;
-                    });
-                    filterItems(); // Apply new deals filter immediately
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close the filter modal
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                  child: const Text('Apply Filters'),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -146,25 +150,24 @@ class AllProductsScreenState extends State<AllProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color gold = Color(0xFFFFD700); // Gold accent color
-    const Color premiumGreen =
-        Color(0xFF006400); // Premium Green color for the app
+    const Color gold = Color(0xFFFFD700);
+    const Color premiumGreen = Color(0xFF006400);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'All Products',
           style: TextStyle(
-            color: gold, // Set gold color for the title
+            color: gold,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: premiumGreen, // Green for a premium touch
+        backgroundColor: premiumGreen,
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: showFilterBottomSheet, // Show filters on button press
+            onPressed: _showFilterBottomSheet,
           ),
         ],
       ),
@@ -180,7 +183,6 @@ class AllProductsScreenState extends State<AllProductsScreen> {
                   labelText: 'Search Products',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: premiumGreen),
                   ),
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: searchQuery.isNotEmpty
@@ -190,7 +192,7 @@ class AllProductsScreenState extends State<AllProductsScreen> {
                             setState(() {
                               searchQuery = '';
                             });
-                            filterItems(); // Apply search filter immediately
+                            _applyFilters();
                           },
                         )
                       : null,
@@ -199,12 +201,11 @@ class AllProductsScreenState extends State<AllProductsScreen> {
                   setState(() {
                     searchQuery = value;
                   });
-                  filterItems(); // Apply search filter immediately
+                  _applyFilters();
                 },
               ),
             ),
-
-            // Grid of Products
+            // Product Grid
             Expanded(
               child: filteredItems.isNotEmpty
                   ? GridView.builder(
@@ -231,56 +232,23 @@ class AllProductsScreenState extends State<AllProductsScreen> {
                               borderRadius: BorderRadius.circular(15),
                             ),
                             elevation: 10,
-                            shadowColor: Colors.black.withOpacity(0.25),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Stack(
-                                  children: [
-                                    // Product Image
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(15)),
-                                      child: foodItem.image.isNotEmpty
-                                          ? CachedNetworkImage(
-                                              imageUrl: foodItem.image,
-                                              height: 120,
-                                              width: double.infinity,
-                                              fit: BoxFit.cover,
-                                              placeholder: (context, url) =>
-                                                  const Center(
-                                                      child:
-                                                          CircularProgressIndicator()),
-                                              errorWidget:
-                                                  (context, url, error) =>
-                                                      const Icon(Icons.error),
-                                            )
-                                          : const Icon(Icons.error),
-                                    ),
-                                    // "New Deal" Label
-                                    if (foodItem.isNewDeal)
-                                      Positioned(
-                                        top: 8,
-                                        left: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 4, horizontal: 8),
-                                          decoration: BoxDecoration(
-                                            color: gold.withOpacity(0.9),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: const Text(
-                                            'New Deal!',
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
+                                // Product Image
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(15)),
+                                  child: CachedNetworkImage(
+                                    imageUrl: foodItem.image,
+                                    height: 120,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => const Center(
+                                        child: CircularProgressIndicator()),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(Icons.error),
+                                  ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
@@ -303,9 +271,7 @@ class AllProductsScreenState extends State<AllProductsScreen> {
                                       ),
                                       Text(
                                         foodItem.brand,
-                                        style: const TextStyle(
-                                            // fontWeight: FontWeight.bold,
-                                            fontSize: 13),
+                                        style: const TextStyle(fontSize: 13),
                                       ),
                                     ],
                                   ),
@@ -322,7 +288,7 @@ class AllProductsScreenState extends State<AllProductsScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: showFilterBottomSheet,
+        onPressed: _showFilterBottomSheet,
         backgroundColor: premiumGreen,
         child: const Icon(Icons.filter_list, color: Colors.white),
       ),
