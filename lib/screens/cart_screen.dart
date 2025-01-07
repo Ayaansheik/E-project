@@ -1,6 +1,8 @@
+import 'dart:convert'; // Import this for base64 decoding
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:myapp/screens/checkout_screen.dart';
 import 'package:myapp/widgets/theme_color.dart';
 
 class CartScreen extends StatelessWidget {
@@ -13,40 +15,26 @@ class CartScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Your Cart',
           style: TextStyle(color: DevThemeConfig.devTextColor),
         ),
         backgroundColor: theme.primaryColor,
         iconTheme: IconThemeData(color: DevThemeConfig.devTextColor),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('cart')
-            .where('userID', isEqualTo: currentUser?.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading cart items.'));
-          }
-
-          final cartDocs = snapshot.data?.docs ?? [];
-          if (cartDocs.isEmpty) {
-            return Center(
+      body: currentUser == null
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.shopping_cart_outlined,
+                    Icons.person_off,
                     size: 100,
                     color: theme.primaryColor.withOpacity(0.7),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Your Cart is Empty',
+                    'Not Logged In',
                     style: theme.textTheme.titleLarge!.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.primaryColor,
@@ -54,7 +42,7 @@ class CartScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Looks like you haven’t added any items yet.',
+                    'You need to log in to view your cart.',
                     style: theme.textTheme.bodyMedium!.copyWith(
                       color: theme.hintColor,
                     ),
@@ -63,7 +51,7 @@ class CartScreen extends StatelessWidget {
                   const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      Navigator.pushNamed(context, '/login');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: DevThemeConfig.devPrimaryColor,
@@ -76,7 +64,7 @@ class CartScreen extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Start Shopping',
+                      'Log In',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -86,135 +74,297 @@ class CartScreen extends StatelessWidget {
                   ),
                 ],
               ),
-            );
-          }
+            )
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('cart')
+                  .where('userID',
+                      isEqualTo: FirebaseFirestore.instance
+                          .doc('users/${currentUser.uid}'))
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Error loading cart items.'));
+                }
 
-          final List<Map<String, dynamic>> cartItems = cartDocs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return {
-              'id': doc.id,
-              'bookRef': data['bookID'],
-              'quantity': data['quantity'] ?? 0,
-              'userID': data['userID'],
-            };
-          }).toList();
+                final cartDocs = snapshot.data?.docs ?? [];
 
-          return ListView.builder(
-            itemCount: cartItems.length,
-            itemBuilder: (ctx, i) {
-              final item = cartItems[i];
-              final bookRef = item['bookRef'] as DocumentReference?;
-
-              if (bookRef == null) {
-                return const Text('Invalid Book Reference');
-              }
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  title: FutureBuilder<DocumentSnapshot>(
-                    future: bookRef.get(),
-                    builder: (context, bookSnapshot) {
-                      if (bookSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Text('Loading...');
-                      }
-
-                      if (!bookSnapshot.hasData || bookSnapshot.hasError) {
-                        return const Text('Book not found');
-                      }
-
-                      final bookData =
-                          bookSnapshot.data!.data() as Map<String, dynamic>?;
-                      if (bookData == null) {
-                        return const Text('Book data is invalid');
-                      }
-
-                      final priceData =
-                          bookData['price'] as Map<String, dynamic>? ?? {};
-                      final amount = priceData['amount'] ?? 0.0;
-                      // ignore: unused_local_variable
-                      final currency = priceData['currency'] ?? 'USD';
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            bookData['title'] ?? 'Unnamed Book',
-                            style: theme.textTheme.bodyMedium!.copyWith(
-                              fontWeight: FontWeight.bold,
+                if (cartDocs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 100,
+                          color: theme.primaryColor.withOpacity(0.7),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Your Cart is Empty',
+                          style: theme.textTheme.titleLarge!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Looks like you haven’t added any items yet.',
+                          style: theme.textTheme.bodyMedium!.copyWith(
+                            color: theme.hintColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: DevThemeConfig.devPrimaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 15,
                             ),
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            ' ${amount.toStringAsFixed(2)}',
-                            style: theme.textTheme.bodySmall,
+                          child: const Text(
+                            'Start Shopping',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: DevThemeConfig.devTextColor,
+                            ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                  subtitle: Row(
-                    children: [
-                      Text(
-                        'Quantity: ${item['quantity']}',
-                        style: theme.textTheme.bodyLarge,
-                      ),
-                      const SizedBox(width: 20),
-                      IconButton(
-                        onPressed: () {
-                          if (item['quantity'] > 1) {
-                            FirebaseFirestore.instance
-                                .collection('cart')
-                                .doc(item['id'])
-                                .update({'quantity': item['quantity'] - 1});
-                          }
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: cartDocs.length,
+                        itemBuilder: (ctx, i) {
+                          final cartItem =
+                              cartDocs[i].data() as Map<String, dynamic>;
+                          final bookRef =
+                              cartItem['bookID'] as DocumentReference?;
+                          final quantity = cartItem['quantity'] ?? 0;
+
+                          return FutureBuilder<DocumentSnapshot>(
+                            future: bookRef?.get(),
+                            builder: (context, bookSnapshot) {
+                              if (bookSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const ListTile(
+                                  title: Text('Loading...'),
+                                );
+                              }
+
+                              if (!bookSnapshot.hasData ||
+                                  bookSnapshot.hasError ||
+                                  bookSnapshot.data?.data() == null) {
+                                return const ListTile(
+                                  title: Text('Book not found'),
+                                );
+                              }
+
+                              final bookData = bookSnapshot.data!.data()
+                                  as Map<String, dynamic>;
+                              final price = bookData['price'] ?? {};
+                              final amount = price['amount'] ?? 0.0;
+                              final totalPrice =
+                                  (amount * quantity).toStringAsFixed(2);
+
+                              // Add to total cart price
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                elevation: 5,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.all(12),
+                                  leading: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(
+                                      base64Decode(bookData['image'] ?? ''),
+                                      fit: BoxFit.cover,
+                                      width: 60,
+                                      height: 60,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                        Icons.book,
+                                        size: 60,
+                                      ),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    bookData['title'] ?? 'Unnamed Book',
+                                    style: theme.textTheme.bodyLarge!.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.primaryColor,
+                                    ),
+                                  ),
+                                  subtitle: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove),
+                                        color: DevThemeConfig.devPrimaryColor,
+                                        onPressed: quantity > 1
+                                            ? () {
+                                                cartDocs[i].reference.update(
+                                                    {'quantity': quantity - 1});
+                                              }
+                                            : null,
+                                      ),
+                                      Text(
+                                        '$quantity',
+                                        selectionColor:
+                                            DevThemeConfig.devPrimaryColor,
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add),
+                                        color: DevThemeConfig.devPrimaryColor,
+                                        onPressed: () {
+                                          cartDocs[i].reference.update(
+                                              {'quantity': quantity + 1});
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '\$$totalPrice',
+                                        style: theme.textTheme.bodyMedium!
+                                            .copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.primaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
                         },
-                        icon: Icon(Icons.remove_circle,
-                            color: theme.primaryColor),
                       ),
-                    ],
-                  ),
-                  trailing: FutureBuilder<DocumentSnapshot>(
-                    future: bookRef.get(),
-                    builder: (context, bookSnapshot) {
-                      if (bookSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Text('Calculating...');
-                      }
+                    ),
+                    BottomAppBar(
+                      elevation: 10,
+                      color: theme.primaryColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => CheckoutScreen(
+                                      userId: '',
+                                      cartItems: [],
+                                      totalAmount: 22,
+                                    ), // Replace with your checkout screen widget
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: DevThemeConfig.devTextColor,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                              ),
+                              child: Text(
+                                'Checkout',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: DevThemeConfig.devPrimaryColor,
+                                ),
+                              ),
+                            ),
+                            StreamBuilder<QuerySnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('cart')
+                                  .where('userID',
+                                      isEqualTo: FirebaseFirestore.instance.doc(
+                                          'users/${FirebaseAuth.instance.currentUser!.uid}'))
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Text('Calculating...');
+                                }
+                                if (snapshot.hasError || !snapshot.hasData) {
+                                  return Text(
+                                    'Error',
+                                    style: theme.textTheme.titleLarge!.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: DevThemeConfig.devPrimaryColor,
+                                    ),
+                                  );
+                                }
 
-                      if (!bookSnapshot.hasData || bookSnapshot.hasError) {
-                        return const Text('--');
-                      }
+                                final cartDocs = snapshot.data?.docs ?? [];
+                                double totalCartPrice = 0;
 
-                      final bookData =
-                          bookSnapshot.data!.data() as Map<String, dynamic>?;
-                      if (bookData == null) {
-                        return const Text('Invalid data');
-                      }
+                                for (var doc in cartDocs) {
+                                  final cartItem =
+                                      doc.data() as Map<String, dynamic>;
+                                  final quantity = cartItem['quantity'] ?? 0;
+                                  final bookRef =
+                                      cartItem['bookID'] as DocumentReference?;
 
-                      final priceData =
-                          bookData['price'] as Map<String, dynamic>? ?? {};
-                      final amount = priceData['amount'] ?? 0.0;
-                      final totalPrice = amount * item['quantity'];
+                                  if (bookRef != null) {
+                                    bookRef.get().then((bookSnapshot) {
+                                      if (bookSnapshot.exists) {
+                                        final bookData = bookSnapshot.data()
+                                            as Map<String, dynamic>;
+                                        final price = bookData['price'] ?? {};
+                                        final amount = price['amount'] ?? 0.0;
+                                        totalCartPrice += amount * quantity;
+                                      }
+                                    });
+                                  }
+                                }
 
-                      return Text(
-                        '\$${totalPrice.toStringAsFixed(2)}',
-                        style: theme.textTheme.bodyMedium,
-                      );
-                    },
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                                return Text(
+                                  'Total: \$${totalCartPrice.toStringAsFixed(2)}',
+                                  style: theme.textTheme.titleLarge!.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: DevThemeConfig.devPrimaryColor,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
     );
   }
 }

@@ -140,11 +140,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               _fetchUserData(); // Refresh data after returning
                             },
                           ),
-                          _buildInfoTile('My Orders', () {}),
+                          _buildInfoTile('My Orders', () {
+                            Navigator.pushNamed(context, '/trackingorder');
+                          }),
                           _buildInfoTile('Cart', () {
                             Navigator.pushNamed(context, '/cart');
                           }),
-                          _buildInfoTile('My Favorites', () {}),
+                          // _buildInfoTile('My Favorites', () {}),
                           _buildInfoTile('My Address', () async {
                             await Navigator.push(
                               context,

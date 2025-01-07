@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/widgets/filter_widget.dart'; // Import the filter widget
 import 'package:myapp/widgets/theme_color.dart';
+import 'package:myapp/screens/bookdetail.dart'; // Import the BookDetailScreen
 
 class AllProductsScreen extends StatefulWidget {
   const AllProductsScreen({super.key});
@@ -24,15 +25,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as String?;
-      if (args != null && args.isNotEmpty) {
-        setState(() {
-          searchQuery = args; // Initialize search query from arguments
-        });
-      }
-      _fetchBooks();
-    });
+    _fetchBooks();
   }
 
   Future<void> _fetchBooks() async {
@@ -134,7 +127,6 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
         child: Column(
           children: [
             TextField(
-              controller: TextEditingController(text: searchQuery),
               decoration: InputDecoration(
                 labelText: 'Search by title or author',
                 border: OutlineInputBorder(
@@ -165,9 +157,9 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.65,
+                        crossAxisSpacing: 8.0,
+                        mainAxisSpacing: 8.0,
                       ),
                       itemCount: filteredBooks.length,
                       itemBuilder: (context, index) {
@@ -175,7 +167,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                         Uint8List? imageBytes;
 
                         try {
-                          final imageBase64 = book['imageBase64'] ?? '';
+                          final imageBase64 = book['image'] ?? '';
                           if (imageBase64.isNotEmpty) {
                             imageBytes = base64Decode(imageBase64);
                           }
@@ -190,7 +182,13 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
                         return GestureDetector(
                           onTap: () {
-                            // Navigate to book details
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    BookDetailScreen(book: book),
+                              ),
+                            );
                           },
                           child: Card(
                             elevation: 8,
@@ -198,17 +196,18 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(20),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    topRight: Radius.circular(20),
                                   ),
                                   child: imageBytes != null
                                       ? Image.memory(
                                           imageBytes,
-                                          height: 200,
-                                          fit: BoxFit.cover,
+                                          height: 150,
+                                          width: double.infinity,
+                                          fit: BoxFit.contain,
                                         )
                                       : const Icon(
                                           Icons.book,
@@ -217,35 +216,84 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                         ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(12.0),
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: Colors.grey[200],
+                                        radius: 20,
+                                        child: const Icon(Icons.person),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              book['title'] ?? 'No Title',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                            Text(
+                                              'By ${book['author'] ?? 'Unknown'}',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black54,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        book['title'] ?? 'No Title',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            '$currency ${amount.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0D47A1),
+                                            ),
+                                          ),
+                                          // const SizedBox(width: 5),
+                                          // Text(
+                                          //   'Discount Here',
+                                          //   style: const TextStyle(
+                                          //     fontSize: 12,
+                                          //     color: Colors.green,
+                                          //   ),
+                                          // ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        'Author: ${book['author'] ?? 'Unknown'}',
-                                        style: const TextStyle(fontSize: 14),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        '$currency ${amount.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          color: Colors.teal,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.star,
+                                              color: Colors.amber, size: 16),
+                                          Text(
+                                            (book['rating'] ?? 0).toString(),
+                                            style:
+                                                const TextStyle(fontSize: 12),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

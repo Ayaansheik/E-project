@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
-import 'package:myapp/providers/cart_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:myapp/widgets/theme_color.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
@@ -53,8 +52,6 @@ class CategoryProductsScreenState extends State<CategoryProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -84,14 +81,69 @@ class CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       final book = books[index];
                       return CategoryProductCard(
                         book: book,
-                        onAddToCart: (id, name, price) {
-                          cartProvider.addItem(id, name, price, 1);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('$name added to cart!'),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
+                        onAddToCart: (id, name, price) async {
+                          final currentUser = FirebaseAuth.instance.currentUser;
+
+                          if (currentUser == null) {
+                            // If not logged in, show login prompt
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Not Logged In'),
+                                  content: const Text(
+                                      'You need to log in to add items to the cart.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Close dialog
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Close dialog
+                                        Navigator.pushNamed(
+                                            context, '/login'); // Redirect
+                                      },
+                                      child: const Text('Login'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            return;
+                          }
+
+                          try {
+                            final cartCollection =
+                                FirebaseFirestore.instance.collection('cart');
+                            final userId = currentUser.uid;
+
+                            await cartCollection.add({
+                              'bookID':
+                                  FirebaseFirestore.instance.doc('books/$id'),
+                              'quantity': 1,
+                              'userID': FirebaseFirestore.instance
+                                  .doc('users/$userId'),
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('$name added to cart!'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error adding to cart: $e'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
                         },
                       );
                     },
@@ -132,10 +184,9 @@ class CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 }
 
-// Category Product Card Widget
 class CategoryProductCard extends StatelessWidget {
   final Map<String, dynamic> book;
-  final void Function(String id, String name, double price) onAddToCart;
+  final Future<void> Function(String id, String name, double price) onAddToCart;
 
   const CategoryProductCard({
     super.key,
@@ -161,94 +212,129 @@ class CategoryProductCard extends StatelessWidget {
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(16.0),
       ),
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 12.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: imageBytes != null
-                    ? Image.memory(
-                        imageBytes,
-                        fit: BoxFit.cover,
-                      )
-                    : const Icon(Icons.book, size: 40, color: Colors.grey),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Title
-            Text(
-              book['title'] ?? 'Unnamed Book',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            // Author and Price Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Author: ${book['author'] ?? 'Unknown'}',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+      elevation: 8,
+      margin: const EdgeInsets.only(bottom: 16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF8F9FA), Color(0xFFE9ECEF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image
+              Container(
+                height: 140,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(12.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      offset: const Offset(0, 4),
+                      blurRadius: 8,
+                    ),
+                  ],
                 ),
-                Text(
-                  '$currency ${amount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF006400),
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: imageBytes != null
+                      ? Image.memory(
+                          imageBytes,
+                          fit: BoxFit.cover,
+                        )
+                      : const Icon(Icons.book, size: 50, color: Colors.grey),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Description
-            Text(
-              book['description'] ?? 'No description available.',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
               ),
-            ),
-            const SizedBox(height: 16),
-            // Add to Cart Button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: () {
-                    onAddToCart(
-                      book['id'] ?? '',
-                      book['title'] ?? 'Unnamed Book',
-                      amount,
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                  child: const Text(
-                    'Add to Cart',
-                    style: TextStyle(color: Colors.white),
-                  ),
+              const SizedBox(height: 12),
+              // Title
+              Text(
+                book['title'] ?? 'Unnamed Book',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 4),
+              // Author and Price Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Author: ${book['author'] ?? 'Unknown'}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  Text(
+                    '$currency ${amount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF006400),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24, color: Colors.grey),
+              // Description
+              Text(
+                book['description'] ?? 'No description available.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Add to Cart Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton(
+                    onPressed: () async {
+                      await onAddToCart(
+                        book['id'] ?? '',
+                        book['title'] ?? 'Unnamed Book',
+                        amount,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: DevThemeConfig.devPrimaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      side: const BorderSide(
+                          color: DevThemeConfig.devPrimaryColor),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12.0,
+                        horizontal: 24.0,
+                      ),
+                    ),
+                    child: const Text(
+                      'Add to Cart',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
