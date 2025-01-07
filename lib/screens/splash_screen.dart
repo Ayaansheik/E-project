@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:myapp/widgets/theme_color.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -145,7 +146,10 @@ class _SplashScreenState extends State<SplashScreen>
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF004d00), Color(0xFF006600)],
+                colors: [
+                  DevThemeConfig.devPrimaryColor,
+                  DevThemeConfig.devPrimaryColor,
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -163,7 +167,10 @@ class _SplashScreenState extends State<SplashScreen>
                   fontWeight: FontWeight.bold,
                   foreground: Paint()
                     ..shader = const LinearGradient(
-                      colors: [Colors.yellow, Colors.orangeAccent],
+                      colors: [
+                        DevThemeConfig.devAccentColor,
+                        DevThemeConfig.devTextColor
+                      ],
                     ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
                 ),
               ),

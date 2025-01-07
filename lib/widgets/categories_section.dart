@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:myapp/screens/categoryproducts_screen.dart';
 import 'package:myapp/widgets/theme_color.dart';
 
@@ -70,7 +70,7 @@ class CategoryGridState extends State<CategoryGrid> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => categoryproductsscreen(
+                              builder: (context) => CategoryProductsScreen(
                                 categoryName: category.name,
                               ),
                             ),
@@ -105,7 +105,7 @@ class CategoryGridState extends State<CategoryGrid> {
                             Text(
                               category.name,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: DevThemeConfig.devPrimaryColor,
                               ),

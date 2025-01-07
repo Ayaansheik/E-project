@@ -1,6 +1,7 @@
 import 'dart:convert'; // For base64 decoding
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/widgets/theme_color.dart';
 
 class AuthorSection extends StatelessWidget {
   const AuthorSection({super.key});
@@ -29,11 +30,28 @@ class AuthorSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.0),
-            child: Text(
-              "Famous Authors",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          // Title with "View All" button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Famous Authors",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/allauthors');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        DevThemeConfig.devPrimaryColor, // Background color
+                    foregroundColor: DevThemeConfig.devTextColor,
+                  ),
+                  child: const Text("View All"),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
@@ -115,6 +133,64 @@ class AuthorSection extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AuthorsPage extends StatelessWidget {
+  const AuthorsPage({super.key});
+
+  Future<List<Map<String, dynamic>>> _fetchAllAuthors() async {
+    // Fetch all authors (isVisible true)
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('authors')
+        .where('isVisible', isEqualTo: true)
+        .get();
+
+    return querySnapshot.docs
+        .map((doc) => {
+              'name': doc['name'] ?? '',
+              'profilePicture': doc['profilePicture'] ?? '',
+            })
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("All Authors"),
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchAllAuthors(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text('Error loading authors'));
+          }
+
+          final authors = snapshot.data ?? [];
+          if (authors.isEmpty) {
+            return const Center(child: Text('No authors found.'));
+          }
+
+          return ListView.builder(
+            itemCount: authors.length,
+            itemBuilder: (context, index) {
+              final author = authors[index];
+              final imageBytes = base64Decode(author['profilePicture']);
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: MemoryImage(imageBytes),
+                ),
+                title: Text(author['name']),
+              );
+            },
+          );
+        },
       ),
     );
   }

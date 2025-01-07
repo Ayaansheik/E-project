@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:myapp/widgets/address_screen.dart';
+import 'package:myapp/widgets/my_details_screen.dart';
 import 'package:myapp/widgets/theme_color.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -18,18 +21,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _streetController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _stateController = TextEditingController();
-  final TextEditingController _countryController = TextEditingController();
-
   File? _profileImage;
   String? _base64Image;
-  bool _isEditing = false;
-
+  String? _username;
   Map<String, dynamic>? _userData;
 
   @override
@@ -47,14 +41,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (docSnapshot.exists) {
       setState(() {
         _userData = docSnapshot.data();
-        _usernameController.text = _userData?['username'] ?? '';
-        _emailController.text = _userData?['email'] ?? '';
-        _phoneController.text = _userData?['phone'] ?? '';
-        final address = _userData?['address'] ?? {};
-        _streetController.text = address['street'] ?? '';
-        _cityController.text = address['city'] ?? '';
-        _stateController.text = address['state'] ?? '';
-        _countryController.text = address['country'] ?? '';
+        _username = _userData?['username'] ?? 'User';
         _base64Image = _userData?['profile_image'];
       });
     }
@@ -64,199 +51,130 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      _profileImage = File(pickedFile.path);
       _base64Image = base64Encode(await _profileImage!.readAsBytes());
+
+      // Save the new image to Firestore
+      await _firestore.collection('users').doc(user.uid).update({
+        'profile_image': _base64Image,
+      });
+
+      setState(() {});
     }
-  }
-
-  Future<void> _updateUserData() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    final updatedData = {
-      'username': _usernameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'phone': _phoneController.text.trim(),
-      'address': {
-        'street': _streetController.text.trim(),
-        'city': _cityController.text.trim(),
-        'state': _stateController.text.trim(),
-        'country': _countryController.text.trim(),
-      },
-      'profile_image': _base64Image,
-    };
-
-    await _firestore.collection('users').doc(user.uid).update(updatedData);
-
-    setState(() {
-      _isEditing = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated successfully!')),
-    );
-  }
-
-  void _navigateToChangePassword() {
-    Navigator.pushNamed(context, '/change-password');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Profile'),
-        backgroundColor: DevThemeConfig.devPrimaryColor,
-        iconTheme:
-            IconThemeData(color: DevThemeConfig.devTextColor), // Set icon color
-        titleTextStyle: TextStyle(
-          color: DevThemeConfig.devTextColor, // Set title text color
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _updateUserData,
-              color: DevThemeConfig.devTextColor, // Set icon color
-            ),
-        ],
-      ),
       body: _userData == null
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: GestureDetector(
-                      onTap: _isEditing ? _pickImage : null,
+          : Stack(
+              children: [
+                Container(
+                  height: 200,
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/bg01.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.2),
+                    ),
+                  ),
+                ),
+                Column(
+                  children: [
+                    AppBar(
+                      title: const Text('My Profile'),
+                      centerTitle: true,
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: DevThemeConfig.devTextColor,
+                      elevation: 0,
+                    ),
+                    const SizedBox(height: 50),
+                    GestureDetector(
+                      onTap: _pickImage,
                       child: CircleAvatar(
-                        radius: 70,
-                        backgroundColor: Colors.grey.shade200,
+                        radius: 60,
+                        backgroundColor: Colors.white,
                         backgroundImage: _profileImage != null
                             ? FileImage(_profileImage!)
                             : (_base64Image != null
                                 ? MemoryImage(base64Decode(_base64Image!))
-                                : null) as ImageProvider?,
+                                : const AssetImage(
+                                    'assets/images/default_user.png',
+                                  )) as ImageProvider?,
                         child: _base64Image == null && _profileImage == null
                             ? const Icon(Icons.add_a_photo, size: 40)
                             : null,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    'Username',
-                    _usernameController,
-                    isEditable: _isEditing,
-                  ),
-                  _buildTextField(
-                    'Email',
-                    _emailController,
-                    isEditable: _isEditing,
-                  ),
-                  _buildTextField(
-                    'Phone Number',
-                    _phoneController,
-                    isEditable: _isEditing,
-                  ),
-                  _buildTextField(
-                    'Street',
-                    _streetController,
-                    isEditable: _isEditing,
-                  ),
-                  _buildTextField(
-                    'City',
-                    _cityController,
-                    isEditable: _isEditing,
-                  ),
-                  _buildTextField(
-                    'State',
-                    _stateController,
-                    isEditable: _isEditing,
-                  ),
-                  _buildTextField(
-                    'Country',
-                    _countryController,
-                    isEditable: _isEditing,
-                  ),
-                  const SizedBox(height: 20),
-                  if (!_isEditing)
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isEditing = true;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: DevThemeConfig.devSecondaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Edit Profile',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _username ?? '',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                  if (!_isEditing)
-                    ElevatedButton(
-                      onPressed: _navigateToChangePassword,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: DevThemeConfig.devAccentColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        'Change Password',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                    // const SizedBox(height: 20),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          _buildInfoTile(
+                            'My Details',
+                            () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MyDetailsScreen(userData: _userData!),
+                                ),
+                              );
+                              _fetchUserData(); // Refresh data after returning
+                            },
+                          ),
+                          _buildInfoTile('My Orders', () {}),
+                          _buildInfoTile('Cart', () {
+                            Navigator.pushNamed(context, '/cart');
+                          }),
+                          _buildInfoTile('My Favorites', () {}),
+                          _buildInfoTile('My Address', () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    MakeAddressScreen(userData: _userData!),
+                              ),
+                            );
+                            _fetchUserData(); // Refresh data after returning
+                          }),
+                        ],
                       ),
                     ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {bool isEditable = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: TextField(
-        controller: controller,
-        enabled: isEditable,
-        style: const TextStyle(fontSize: 16),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: DevThemeConfig.devTextColor),
-          filled: true,
-          fillColor: DevThemeConfig.devBackgroundColor,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(
-              color: DevThemeConfig.devPrimaryColor,
-              width: 2,
-            ),
-          ),
+  Widget _buildInfoTile(String title, VoidCallback onTap) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        trailing: const Icon(Icons.arrow_forward_ios),
+        onTap: onTap,
       ),
     );
   }

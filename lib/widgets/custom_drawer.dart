@@ -67,6 +67,17 @@ class CustomDrawer extends StatelessWidget {
                 Navigator.pushNamed(context, '/cart');
               },
             ),
+            // New Order Tracking option
+            ListTile(
+              leading: Icon(Icons.local_shipping, color: theme.hintColor),
+              title: Text('Order Tracking',
+                  style: TextStyle(color: theme.hintColor)),
+              onTap: () {
+                Navigator.of(context).pop(); // Close the drawer
+                Navigator.pushNamed(context, '/trackingorder');
+                // Navigator.pushNamed(context, '/order_tracking');
+              },
+            ),
             ListTile(
               leading: Icon(Icons.manage_accounts, color: theme.hintColor),
               title: Text('User', style: TextStyle(color: theme.hintColor)),

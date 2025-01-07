@@ -1,16 +1,21 @@
 import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/screens/all_products_screen.dart';
+import 'package:myapp/screens/auhtor_screen.dart';
 import 'package:myapp/screens/checkout_screen.dart';
+import 'package:myapp/screens/author_detail_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
+import 'package:myapp/screens/order_tracking.dart';
 import 'package:myapp/screens/user_profile_screen.dart';
+import 'package:myapp/widgets/address_screen.dart';
+import 'package:myapp/widgets/my_details_screen.dart';
 import 'package:provider/provider.dart';
 import 'screens/new_deals_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/food_detail_screen.dart';
 import 'screens/cart_screen.dart';
-import 'screens/all_products_screen.dart';
 import 'screens/splash_screen.dart';
 import 'providers/cart_provider.dart';
 import 'models/cart_item.dart';
@@ -40,41 +45,41 @@ class FoodDeliveryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BOOKIFIER',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF006400), // premiumGreen
-        hintColor: const Color(0xFFFFD700), // gold
-        textTheme: const TextTheme(
-          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          titleMedium: TextStyle(fontSize: 16),
-          bodyMedium: TextStyle(fontSize: 14),
-          bodyLarge: TextStyle(fontSize: 16),
-          labelLarge: TextStyle(fontSize: 16),
-        ),
-        iconTheme: const IconThemeData(
-          color: Color(0xFFFFD700), // gold
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD700), // gold accent color
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          color: Color(0xFF006400), // premiumGreen
-        ),
-      ),
       home: const SplashScreenHandler(),
       routes: {
         '/userprofile': (context) => UserProfileScreen(),
+        '/allauthors': (context) => AuthorScreen(),
         '/home': (context) => HomeScreen(),
+        '/authorDetails': (context) => AuthorDetailScreen(),
         '/details': (context) => const FoodDetailScreen(),
+        '/userdetailscreen': (context) => const MyDetailsScreen(
+              userData: {},
+            ),
+        '/useraddress': (context) => const MakeAddressScreen(
+              userData: {},
+            ),
         '/cart': (context) => const CartScreen(),
+        '/trackingorder': (context) => const OrderTrackingPage(),
         '/new-deals': (context) => const NewDealsScreen(),
         '/checkout': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments
-              as Map<String, dynamic>;
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+
+          if (args == null ||
+              args['cartItems'] == null ||
+              args['totalAmount'] == null ||
+              args['cartItems'] is! List<CartItem> ||
+              args['totalAmount'] is! double ||
+              args['userId'] == null || // Check for userId
+              args['userId'] is! String) {
+            // Validate userId type
+            throw Exception('Invalid arguments for /checkout route');
+          }
+
           return CheckoutScreen(
             cartItems: args['cartItems'] as List<CartItem>,
             totalAmount: args['totalAmount'] as double,
+            userId: args['userId'] as String, // Pass userId to CheckoutScreen
           );
         },
         '/all-products': (context) => const AllProductsScreen(),

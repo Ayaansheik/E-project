@@ -1,6 +1,7 @@
 // lib/services/mock_data.dart
 
 import '../models/food_item.dart';
+import '../models/order_detail.dart';
 
 // Generate food items based on the given file names
 List<FoodItem> mockFoodItems = [
@@ -212,3 +213,29 @@ List<FoodItem> mockFoodItems = [
     description: 'Crispy fried chicken served with a side of fries.',
   ),
 ];
+
+final List<OrderDetail> _orders = [
+    OrderDetail(
+      imageUrl: 'https://marketplace.canva.com/EAFfSnGl7II/2/0/1003w/canva-elegant-dark-woods-fantasy-photo-book-cover-vAt8PH1CmqQ.jpg',
+      title: 'Book Title 1',
+      quantity: 2,
+      price: 20.0,
+      stage: 2,
+      daysLeft: 3,
+    ),
+    OrderDetail(
+      imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSG7ekxu3OzvIQLn2K9bnYPHvNlHiVnR216eg&s.jpg',
+      title: 'Book Title 2',
+      quantity: 1,
+      price: 15.0,
+      stage: 3,
+      daysLeft: 1,
+    ),
+  ];
+
+  // Simulate fetching data from a database with a Future
+  Future<List<OrderDetail>> fetchOrders() async {
+    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
+    return _orders;
+  }
+

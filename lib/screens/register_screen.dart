@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +16,6 @@ class RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-
-  File? _profileImage;
 
   Future<void> _registerUser() async {
     final email = _emailController.text.trim();
@@ -45,12 +41,6 @@ class RegisterScreenState extends State<RegisterScreen> {
       User? user = userCredential.user;
 
       if (user != null) {
-        String? base64ProfileImage;
-        if (_profileImage != null) {
-          final bytes = await _profileImage!.readAsBytes();
-          base64ProfileImage = base64Encode(bytes);
-        }
-
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'email': email,
           'username': username,
@@ -61,7 +51,7 @@ class RegisterScreenState extends State<RegisterScreen> {
             'state': null,
             'country': null,
           },
-          'profile_image': base64ProfileImage ?? '',
+          'profile_image': null,
           'payment_method': null,
         });
 

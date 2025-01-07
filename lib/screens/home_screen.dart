@@ -43,7 +43,8 @@ class HomeScreen extends StatelessWidget {
                           Navigator.pushNamed(
                             context,
                             '/all-products',
-                            arguments: query, // Pass search query as argument
+                            arguments:
+                                query, // Pass the search query as argument
                           );
                         }
                       },
@@ -82,8 +83,7 @@ class HomeScreen extends StatelessWidget {
                                 Text(
                                   'Free Delivery On First Two Orders!',
                                   style: TextStyle(
-                                    // color: Colors.white,
-                                    color: DevThemeConfig.devBackgroundColor,
+                                    color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -97,8 +97,7 @@ class HomeScreen extends StatelessWidget {
                               Navigator.pushNamed(context, '/all-products');
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  DevThemeConfig.devBackgroundColor,
+                              backgroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 12),
                               shape: RoundedRectangleBorder(
