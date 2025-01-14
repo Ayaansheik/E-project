@@ -30,7 +30,7 @@ class CategoryGridState extends State<CategoryGrid> {
       return Category(
         name: doc['name'] ?? '',
         iconBase64: doc['image'] ?? '',
-        isVisible: doc['isVisible'] ?? true,
+        IsVisible: doc['IsVisible'] ?? true,
       );
     }).toList();
   }
@@ -63,7 +63,7 @@ class CategoryGridState extends State<CategoryGrid> {
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
-                return category.isVisible
+                return category.IsVisible
                     ? GestureDetector(
                         onTap: () {
                           // Navigate to CategoryProductsScreen with the category name
@@ -96,7 +96,8 @@ class CategoryGridState extends State<CategoryGrid> {
                               child: Padding(
                                 padding: const EdgeInsets.all(12.0),
                                 child: Image.memory(
-                                  base64Decode(category.iconBase64),
+                                  base64Decode(
+                                      category.iconBase64.split(',').last),
                                   fit: BoxFit.contain,
                                 ),
                               ),
@@ -127,11 +128,11 @@ class CategoryGridState extends State<CategoryGrid> {
 class Category {
   final String name;
   final String iconBase64;
-  final bool isVisible;
+  final bool IsVisible;
 
   Category({
     required this.name,
     required this.iconBase64,
-    required this.isVisible,
+    required this.IsVisible,
   });
 }

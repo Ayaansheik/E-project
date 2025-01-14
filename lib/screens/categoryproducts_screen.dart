@@ -164,7 +164,7 @@ class CategoryProductsScreenState extends State<CategoryProductsScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: DevThemeConfig.devTextColor,
+                            color: DevThemeConfig.devAccentColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -173,7 +173,7 @@ class CategoryProductsScreenState extends State<CategoryProductsScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: DevThemeConfig.devTextColor,
+                            color: DevThemeConfig.devPrimaryColor,
                           ),
                         ),
                       ],

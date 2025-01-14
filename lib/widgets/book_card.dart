@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -29,7 +30,7 @@ class BookCard extends StatelessWidget {
                     const BorderRadius.horizontal(left: Radius.circular(20)),
                 child: book['image'] != null
                     ? Image.memory(
-                        base64Decode(book['image']),
+                        base64Decode(book['image'].split(',').last),
                         height: 130, // Fixed height for the image
                         width: 130, // Fixed width
                         fit: BoxFit.cover,
@@ -113,7 +114,8 @@ class BookCard extends StatelessWidget {
 }
 
 class BookListWidget extends StatelessWidget {
-  const BookListWidget({super.key});
+  const BookListWidget(
+      {super.key, required Null Function(dynamic book) onBookTap});
 
   // Fetch books from Firestore
   Future<List<Map<String, dynamic>>> _fetchBooks() async {
@@ -137,6 +139,7 @@ class BookListWidget extends StatelessWidget {
 
         final books = snapshot.data!;
 
+      
         // Use a Column instead of ListView.builder for non-scrollable cards
         return Column(
           children: books.map((book) {

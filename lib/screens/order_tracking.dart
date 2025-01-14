@@ -51,22 +51,35 @@ class OrderTrackingPage extends StatelessWidget {
   Future<List<OrderDetail>> _fetchOrdersFromFirestore() async {
     final List<OrderDetail> orders = [];
     try {
-      // Fetch orders from the `order` collection
+      // Fetch orders from the `orderitems` collection
       final querySnapshot =
-          await FirebaseFirestore.instance.collection('order').get();
+          await FirebaseFirestore.instance.collection('orderitems').get();
 
       for (var orderDoc in querySnapshot.docs) {
         final orderData = orderDoc.data();
 
-        // Fetch book details using bookId reference
-        final bookRef = orderData['bookId'] as DocumentReference;
-        final bookSnapshot = await bookRef.get();
-        final bookData = bookSnapshot.data() as Map<String, dynamic>;
+        // Ensure bookID exists and is a valid reference
+        final bookRef = orderData['bookID'] as DocumentReference?;
+        if (bookRef == null) {
+          continue; // Skip this order if no valid book reference exists
+        }
 
-        // Fetch user details using userId reference
-        final userRef = orderData['userID'] as DocumentReference;
+        // Fetch book details using bookId reference
+        final bookSnapshot = await bookRef.get();
+        final bookData = bookSnapshot.data() as Map<String, dynamic>?;
+        if (bookData == null) {
+          continue; // Skip this order if no valid book data is found
+        }
+
+        // Fetch user details using userId (string)
+        final userRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(orderData['userID'] as String? ?? '');
         final userSnapshot = await userRef.get();
-        final userData = userSnapshot.data() as Map<String, dynamic>;
+        final userData = userSnapshot.data();
+        if (userData == null) {
+          continue; // Skip this order if no valid user data is found
+        }
 
         // Add OrderDetail instance to the list
         orders.add(OrderDetail(
@@ -75,9 +88,10 @@ class OrderTrackingPage extends StatelessWidget {
           price: bookData['price'] is num
               ? (bookData['price'] as num).toDouble()
               : 0.0,
-          stage: orderData['stage'] ?? 'Unknown',
-          daysLeft: orderData['days_left'] ?? 0,
-          imageUrl: bookData['image'] ?? '',
+          stage: orderData['status'] ?? 'Unknown',
+          daysLeft: orderData['days_left'] ?? 0, // Ensure 'days_left' exists
+          imageUrl:
+              bookData['image'] ?? '', // Handle missing image URL gracefully
           userName: userData['username'] ?? 'Unknown User',
         ));
       }
@@ -118,7 +132,9 @@ class OrderTrackingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Uint8List? decodedImage;
     try {
-      decodedImage = base64Decode(order.imageUrl);
+      if (order.imageUrl.isNotEmpty) {
+        decodedImage = base64Decode(order.imageUrl);
+      }
     } catch (e) {
       // Handle decoding errors gracefully
       print('Error decoding image: $e');

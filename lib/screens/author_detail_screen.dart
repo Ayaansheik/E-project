@@ -68,15 +68,24 @@ class AuthorDetailScreenState extends State<AuthorDetailScreen> {
       {double width = 100, double height = 100}) {
     try {
       if (base64String != null && base64String.isNotEmpty) {
+        final decodedBytes = base64Decode(base64String.split(',').last);
         return Image.memory(
-          base64Decode(base64String),
+          decodedBytes,
           width: width,
           height: height,
           fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: width,
+              height: height,
+              color: Colors.grey[300],
+              child: Icon(Icons.error, size: width / 2, color: Colors.grey),
+            );
+          },
         );
       }
     } catch (e) {
-      print("Error decoding image: $e");
+      debugPrint("Error decoding image: $e");
     }
     return Container(
       width: width,
@@ -88,9 +97,6 @@ class AuthorDetailScreenState extends State<AuthorDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ignore: unused_local_variable
-    final authorId = ModalRoute.of(context)?.settings.arguments as String?;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Author Details"),

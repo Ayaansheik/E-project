@@ -120,7 +120,7 @@ class HomeScreen extends StatelessWidget {
                   // Author Section are from widget famous_author_section.dart
                   const AuthorSection(),
                   // card are from widgets book_card.dart
-                  BookListWidget(),
+                  BookListWidget(onBookTap: (book) {  },),
                 ],
               ),
             ),

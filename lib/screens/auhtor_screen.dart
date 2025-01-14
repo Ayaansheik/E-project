@@ -9,6 +9,25 @@ class AuthorScreen extends StatelessWidget {
 
   AuthorScreen({super.key});
 
+  // Helper method to decode and render base64 images
+  Widget _decodeBase64Image(String? base64String, {double size = 80.0}) {
+    try {
+      if (base64String != null && base64String.isNotEmpty) {
+        return CircleAvatar(
+          radius: size / 2,
+          backgroundImage: MemoryImage(base64Decode(base64String.split(',').last)),
+        );
+      }
+    } catch (e) {
+      print("Error decoding image: $e");
+    }
+    return CircleAvatar(
+      radius: size / 2,
+      backgroundColor: Colors.grey[300],
+      child: Icon(Icons.person, size: size / 2, color: Colors.grey),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,10 +47,24 @@ class AuthorScreen extends StatelessWidget {
           }
 
           if (snapshot.hasError) {
-            return const Center(child: Text('Error fetching authors'));
+            return const Center(
+              child: Text(
+                'Error fetching authors. Please try again later.',
+                style: TextStyle(fontSize: 16, color: Colors.red),
+              ),
+            );
           }
 
           final authors = snapshot.data?.docs ?? [];
+
+          if (authors.isEmpty) {
+            return const Center(
+              child: Text(
+                'No authors available.',
+                style: TextStyle(fontSize: 16),
+              ),
+            );
+          }
 
           return ListView.builder(
             itemCount: authors.length,
@@ -42,8 +75,6 @@ class AuthorScreen extends StatelessWidget {
               return InkWell(
                 onTap: () {
                   final authorId = authorDoc.id;
-                  print(
-                      'Navigating to AuthorDetailScreen with authorId: $authorId');
                   Navigator.pushNamed(
                     context,
                     '/authorDetails',
@@ -94,7 +125,7 @@ class AuthorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4.0,
-      margin: const EdgeInsets.all(8.0),
+      margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0),
       ),
@@ -103,15 +134,7 @@ class AuthorCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 40.0,
-              backgroundImage: profilePicture.isNotEmpty
-                  ? MemoryImage(base64Decode(profilePicture))
-                  : null,
-              child: profilePicture.isEmpty
-                  ? Icon(Icons.person, size: 40, color: Colors.grey)
-                  : null,
-            ),
+            _decodeBase64Image(profilePicture, size: 80.0),
             const SizedBox(width: 16.0),
             Expanded(
               child: Column(
@@ -134,15 +157,42 @@ class AuthorCard extends StatelessWidget {
                   Text(
                     _truncateBio(bio),
                     style: const TextStyle(fontSize: 14.0),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
+            if (isFamous)
+              const Padding(
+                padding: EdgeInsets.only(left: 8.0),
+                child: Icon(Icons.star, color: Colors.amber, size: 24.0),
+              ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _decodeBase64Image(String base64String, {double size = 80.0}) {
+    try {
+      if (base64String.isNotEmpty) {
+        return CircleAvatar(
+          radius: size / 2,
+          backgroundImage: MemoryImage(base64Decode(base64String)),
+        );
+      }
+    } catch (e) {
+      return CircleAvatar(
+        radius: size / 2,
+        backgroundColor: Colors.grey[300],
+        child: const Icon(Icons.person, size: 40, color: Colors.grey),
+      );
+    }
+    return CircleAvatar(
+      radius: size / 2,
+      backgroundColor: Colors.grey[300],
+      child: const Icon(Icons.person, size: 40, color: Colors.grey),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert'; // For base64 decoding
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/widgets/theme_color.dart';
@@ -7,20 +8,28 @@ class AuthorSection extends StatelessWidget {
   const AuthorSection({super.key});
 
   Future<List<Map<String, dynamic>>> _fetchAuthors() async {
-    // Fetch authors where isVisible is true
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('authors')
-        .where('isVisible', isEqualTo: true)
-        .get();
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('authors')
+          .where('isVisible', isEqualTo: true)
+          .get();
 
-    // Convert query results to a list of maps
-    return querySnapshot.docs
-        .map((doc) => {
-              'name': doc['name'] ?? '',
-              'profilePicture': doc['profilePicture'] ?? '',
-              'isFamous': doc['isFamous'] ?? false,
-            })
-        .toList();
+      return querySnapshot.docs.map((doc) {
+        final profilePic = doc['profilePicture'] ?? '';
+        final imageBytes = (profilePic.isNotEmpty && profilePic.contains(','))
+            ? base64Decode(profilePic.split(',').last)
+            : Uint8List(0);
+
+        return {
+          'name': doc['name'] ?? '',
+          'profilePicture': imageBytes,
+          'isFamous': doc['isFamous'] ?? false,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching authors: $e');
+      return [];
+    }
   }
 
   @override
@@ -45,8 +54,7 @@ class AuthorSection extends StatelessWidget {
                     Navigator.pushNamed(context, '/allauthors');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        DevThemeConfig.devPrimaryColor, // Background color
+                    backgroundColor: DevThemeConfig.devPrimaryColor,
                     foregroundColor: DevThemeConfig.devTextColor,
                   ),
                   child: const Text("View All"),
@@ -84,7 +92,7 @@ class AuthorSection extends StatelessWidget {
                   itemCount: famousAuthors.length,
                   itemBuilder: (context, index) {
                     final author = famousAuthors[index];
-                    final imageBytes = base64Decode(author['profilePicture']);
+                    final imageBytes = author['profilePicture'] as Uint8List;
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -109,8 +117,17 @@ class AuthorSection extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(50),
                               child: Image.memory(
-                                imageBytes,
+                                imageBytes.isNotEmpty
+                                    ? imageBytes
+                                    : Uint8List(0),
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -142,18 +159,27 @@ class AuthorsPage extends StatelessWidget {
   const AuthorsPage({super.key});
 
   Future<List<Map<String, dynamic>>> _fetchAllAuthors() async {
-    // Fetch all authors (isVisible true)
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('authors')
-        .where('isVisible', isEqualTo: true)
-        .get();
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('authors')
+          .where('isVisible', isEqualTo: true)
+          .get();
 
-    return querySnapshot.docs
-        .map((doc) => {
-              'name': doc['name'] ?? '',
-              'profilePicture': doc['profilePicture'] ?? '',
-            })
-        .toList();
+      return querySnapshot.docs.map((doc) {
+        final profilePic = doc['profilePicture'] ?? '';
+        final imageBytes = (profilePic.isNotEmpty && profilePic.contains(','))
+            ? base64Decode(profilePic.split(',').last)
+            : Uint8List(0);
+
+        return {
+          'name': doc['name'] ?? '',
+          'profilePicture': imageBytes,
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching authors: $e');
+      return [];
+    }
   }
 
   @override
@@ -180,11 +206,12 @@ class AuthorsPage extends StatelessWidget {
             itemCount: authors.length,
             itemBuilder: (context, index) {
               final author = authors[index];
-              final imageBytes = base64Decode(author['profilePicture']);
+              final imageBytes = author['profilePicture'] as Uint8List;
 
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundImage: MemoryImage(imageBytes),
+                  backgroundImage: MemoryImage(
+                      imageBytes.isNotEmpty ? imageBytes : Uint8List(0)),
                 ),
                 title: Text(author['name']),
               );

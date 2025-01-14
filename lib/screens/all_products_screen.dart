@@ -14,32 +14,35 @@ class AllProductsScreen extends StatefulWidget {
 }
 
 class _AllProductsScreenState extends State<AllProductsScreen> {
-  String searchQuery = '';
-  String selectedCategory = 'All';
-  double minPrice = 0;
-  double maxPrice = double.infinity;
-  bool showBestSellers = false;
-  List<Map<String, dynamic>> books = [];
-  List<String> categories = ['All'];
+  String searchQuery = ''; // Store the search query
+  String selectedCategory = 'All'; // Selected category filter
+  double minPrice = 0; // Minimum price filter
+  double maxPrice = double.infinity; // Maximum price filter
+  bool showBestSellers = false; // Filter for best sellers
+  List<Map<String, dynamic>> books = []; // List to store books
+  List<String> categories = ['All']; // List of categories
 
   @override
   void initState() {
     super.initState();
-    _fetchBooks();
+    _fetchBooks(); // Fetch books from Firestore when the screen is initialized
   }
 
   Future<void> _fetchBooks() async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('books')
-          .where('isVisible', isEqualTo: true)
+          .where('isVisible', isEqualTo: true) // Only fetch visible books
           .get();
 
       setState(() {
-        books = snapshot.docs.map((doc) => doc.data()).toList();
+        books =
+            snapshot.docs.map((doc) => doc.data()).toList(); // Set books data
         categories = [
           'All',
-          ...{...books.map((book) => book['category'] ?? 'Uncategorized')}
+          ...{
+            ...books.map((book) => book['category'] ?? 'Uncategorized')
+          } // Populate categories
         ];
       });
     } catch (error) {
@@ -50,6 +53,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
     }
   }
 
+  // Filters the books based on title, author, category, price, and best-sellers
   List<Map<String, dynamic>> _filteredBooks() {
     return books.where((book) {
       final title = book['title']?.toString().toLowerCase() ?? '';
@@ -59,7 +63,11 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
       final isTopSelling = book['isTopSelling'] ?? false;
       final query = searchQuery.toLowerCase();
 
-      return (title.contains(query) || author.contains(query)) &&
+      // Check if the title or author contains the search query
+      final matchesSearch = title.contains(query) || author.contains(query);
+
+      // Return books that match search query and apply other filters (category, price, best-sellers)
+      return matchesSearch &&
           (selectedCategory == 'All' || category == selectedCategory) &&
           price >= minPrice &&
           price <= maxPrice &&
@@ -67,6 +75,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
     }).toList();
   }
 
+  // Opens the filter dialog
   void _openFilterDialog() {
     showModalBottomSheet(
       context: context,
@@ -98,8 +107,8 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
             });
           },
           onApplyFilters: () {
-            setState(() {});
-            Navigator.pop(context);
+            setState(() {}); // Apply filters
+            Navigator.pop(context); // Close the filter dialog
           },
         );
       },
@@ -108,7 +117,8 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredBooks = _filteredBooks();
+    final filteredBooks =
+        _filteredBooks(); // Get the filtered books based on search query and filters
 
     return Scaffold(
       appBar: AppBar(
@@ -118,7 +128,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: _openFilterDialog,
+            onPressed: _openFilterDialog, // Open filter dialog
           ),
         ],
       ),
@@ -126,6 +136,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
         padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
+            // Search TextField
             TextField(
               decoration: InputDecoration(
                 labelText: 'Search by title or author',
@@ -138,7 +149,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           setState(() {
-                            searchQuery = '';
+                            searchQuery = ''; // Clear search query
                           });
                         },
                       )
@@ -146,7 +157,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
               ),
               onChanged: (value) {
                 setState(() {
-                  searchQuery = value;
+                  searchQuery = value; // Update search query as the user types
                 });
               },
             ),
@@ -166,6 +177,7 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                         final book = filteredBooks[index];
                         Uint8List? imageBytes;
 
+                        // Decode base64 image if available
                         try {
                           final imageBase64 = book['image'] ?? '';
                           if (imageBase64.isNotEmpty) {
@@ -185,8 +197,8 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    BookDetailScreen(book: book),
+                                builder: (context) => BookDetailScreen(
+                                    book: book), // Navigate to book details
                               ),
                             );
                           },
@@ -272,14 +284,6 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                                               color: Color(0xFF0D47A1),
                                             ),
                                           ),
-                                          // const SizedBox(width: 5),
-                                          // Text(
-                                          //   'Discount Here',
-                                          //   style: const TextStyle(
-                                          //     fontSize: 12,
-                                          //     color: Colors.green,
-                                          //   ),
-                                          // ),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
@@ -305,7 +309,8 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                       },
                     )
                   : const Center(
-                      child: Text('No books match your search'),
+                      child: Text(
+                          'No books match your search'), // No books found message
                     ),
             ),
           ],

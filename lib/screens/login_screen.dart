@@ -182,7 +182,7 @@ class LoginScreenState extends State<LoginScreen> {
                           Text(
                             "Login to your account",
                             style: TextStyle(
-                              color: DevThemeConfig.devTextColor,
+                              color: DevThemeConfig.devPrimaryColor,
                               fontSize: 16,
                             ),
                           ),

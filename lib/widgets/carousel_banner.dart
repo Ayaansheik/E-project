@@ -29,14 +29,14 @@ class CarouselBannerState extends State<CarouselBanner> {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('banners') // Your Firestore collection
-          .where('isVisible', isEqualTo: true) // Only visible banners
+          .where('IsVisible', isEqualTo: true) // Only visible banners
           .get();
 
       // Fetch Base64 encoded images and isFeatured field from Firestore
       List<Map<String, dynamic>> fetchedBanners = snapshot.docs
           .map((doc) => {
-                'image': doc['image'] as String, // Base64 string
-                'isFeatured': doc['isFeatured'] as bool, // Boolean value
+                'BannerImage': doc['BannerImage'] as String, // Base64 string
+                'IsFeatured': doc['IsFeatured'] as bool, // Boolean value
               })
           .toList();
 
@@ -75,7 +75,7 @@ class CarouselBannerState extends State<CarouselBanner> {
       ),
       items: bannerData.map((banner) {
         // Clean Base64 string to remove any metadata (e.g., "data:image/jpeg;base64,")
-        String cleanBase64String = banner['image']
+        String cleanBase64String = banner['BannerImage']
             .replaceFirst(RegExp(r"^data:image\/[a-zA-Z]*;base64,"), "");
 
         // Decode Base64 string into bytes
@@ -110,7 +110,7 @@ class CarouselBannerState extends State<CarouselBanner> {
                   ),
                 ),
                 // Show "Featured" only if the banner is featured
-                if (banner['isFeatured'] == true)
+                if (banner['IsFeatured'] == true)
                   Positioned(
                     bottom: 15,
                     left: 15,

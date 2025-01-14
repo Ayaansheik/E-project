@@ -3,10 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:myapp/screens/checkout_screen.dart';
+import 'package:myapp/screens/login_screen.dart';
 import 'package:myapp/widgets/theme_color.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
+
+  // Function to calculate the total price
+  double getTotalPrice(List<QueryDocumentSnapshot> cartDocs) {
+    double totalPrice = 0.0;
+
+    for (var doc in cartDocs) {
+      final cartItem = doc.data() as Map<String, dynamic>;
+      final quantity = cartItem['quantity'] ?? 0;
+      final priceMap =
+          cartItem['price'] as Map<String, dynamic>?; // Ensure price is a map
+      final price =
+          priceMap?['amount']?.toDouble() ?? 0.0; // Extract amount safely
+
+      totalPrice += (quantity * price);
+    }
+    return totalPrice;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +35,7 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Your Cart',
-          style: TextStyle(color: DevThemeConfig.devTextColor),
+          style: TextStyle(color: DevThemeConfig.devBackgroundColor),
         ),
         backgroundColor: theme.primaryColor,
         iconTheme: IconThemeData(color: DevThemeConfig.devTextColor),
@@ -27,50 +45,20 @@ class CartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.person_off,
-                    size: 100,
-                    color: theme.primaryColor.withOpacity(0.7),
-                  ),
-                  const SizedBox(height: 20),
                   Text(
-                    'Not Logged In',
-                    style: theme.textTheme.titleLarge!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.primaryColor,
-                    ),
+                    'Please log in to view your cart.',
+                    style: TextStyle(color: DevThemeConfig.devPrimaryColor),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'You need to log in to view your cart.',
-                    style: theme.textTheme.bodyMedium!.copyWith(
-                      color: theme.hintColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/login');
+                      // Navigate to login screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => LoginScreen(),
+                        ),
+                      );
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: DevThemeConfig.devPrimaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 15,
-                      ),
-                    ),
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: DevThemeConfig.devTextColor,
-                      ),
-                    ),
+                    child: const Text('Login'),
                   ),
                 ],
               ),
@@ -97,55 +85,18 @@ class CartScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 100,
-                          color: theme.primaryColor.withOpacity(0.7),
-                        ),
-                        const SizedBox(height: 20),
+                        const Icon(Icons.shopping_cart_outlined, size: 80),
+                        const SizedBox(height: 16),
                         Text(
-                          'Your Cart is Empty',
-                          style: theme.textTheme.titleLarge!.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Looks like you haven’t added any items yet.',
-                          style: theme.textTheme.bodyMedium!.copyWith(
-                            color: theme.hintColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: DevThemeConfig.devPrimaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 30,
-                              vertical: 15,
-                            ),
-                          ),
-                          child: const Text(
-                            'Start Shopping',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: DevThemeConfig.devTextColor,
-                            ),
-                          ),
+                          'Your cart is empty!',
+                          style: theme.textTheme.bodyLarge,
                         ),
                       ],
                     ),
                   );
                 }
+
+                final totalPrice = getTotalPrice(cartDocs);
 
                 return Column(
                   children: [
@@ -179,12 +130,12 @@ class CartScreen extends StatelessWidget {
 
                               final bookData = bookSnapshot.data!.data()
                                   as Map<String, dynamic>;
-                              final price = bookData['price'] ?? {};
-                              final amount = price['amount'] ?? 0.0;
-                              final totalPrice =
+                              final priceData =
+                                  bookData['price'] as Map<String, dynamic>?;
+                              final amount =
+                                  priceData?['amount']?.toDouble() ?? 0.0;
+                              final itemTotalPrice =
                                   (amount * quantity).toStringAsFixed(2);
-
-                              // Add to total cart price
 
                               return Card(
                                 margin: const EdgeInsets.symmetric(
@@ -248,7 +199,7 @@ class CartScreen extends StatelessWidget {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        '\$$totalPrice',
+                                        '\$$itemTotalPrice',
                                         style: theme.textTheme.bodyMedium!
                                             .copyWith(
                                           fontWeight: FontWeight.bold,
@@ -266,7 +217,7 @@ class CartScreen extends StatelessWidget {
                     ),
                     BottomAppBar(
                       elevation: 10,
-                      color: theme.primaryColor,
+                      color: theme.canvasColor, // Matches the screen background
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
@@ -277,85 +228,51 @@ class CartScreen extends StatelessWidget {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => CheckoutScreen(
-                                      userId: '',
-                                      cartItems: [],
-                                      totalAmount: 22,
-                                    ), // Replace with your checkout screen widget
+                                      cartDetails: cartDocs,
+                                      totalPrice: totalPrice,
+                                    ),
                                   ),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: DevThemeConfig.devTextColor,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
+                                backgroundColor: DevThemeConfig.devPrimaryColor,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(25),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 30,
+                                  vertical: 15,
                                 ),
                               ),
                               child: Text(
                                 'Checkout',
-                                style: TextStyle(
-                                  fontSize: 16,
+                                style: theme.textTheme.bodyLarge!.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: DevThemeConfig.devPrimaryColor,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                            StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('cart')
-                                  .where('userID',
-                                      isEqualTo: FirebaseFirestore.instance.doc(
-                                          'users/${FirebaseAuth.instance.currentUser!.uid}'))
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Text('Calculating...');
-                                }
-                                if (snapshot.hasError || !snapshot.hasData) {
-                                  return Text(
-                                    'Error',
-                                    style: theme.textTheme.titleLarge!.copyWith(
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Total:',
+                                    style: theme.textTheme.bodyMedium!.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.hintColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    '\$${totalPrice.toStringAsFixed(2)}',
+                                    style: theme.textTheme.bodyLarge!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: DevThemeConfig.devPrimaryColor,
+                                      fontSize: 18,
                                     ),
-                                  );
-                                }
-
-                                final cartDocs = snapshot.data?.docs ?? [];
-                                double totalCartPrice = 0;
-
-                                for (var doc in cartDocs) {
-                                  final cartItem =
-                                      doc.data() as Map<String, dynamic>;
-                                  final quantity = cartItem['quantity'] ?? 0;
-                                  final bookRef =
-                                      cartItem['bookID'] as DocumentReference?;
-
-                                  if (bookRef != null) {
-                                    bookRef.get().then((bookSnapshot) {
-                                      if (bookSnapshot.exists) {
-                                        final bookData = bookSnapshot.data()
-                                            as Map<String, dynamic>;
-                                        final price = bookData['price'] ?? {};
-                                        final amount = price['amount'] ?? 0.0;
-                                        totalCartPrice += amount * quantity;
-                                      }
-                                    });
-                                  }
-                                }
-
-                                return Text(
-                                  'Total: \$${totalCartPrice.toStringAsFixed(2)}',
-                                  style: theme.textTheme.titleLarge!.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: DevThemeConfig.devPrimaryColor,
                                   ),
-                                );
-                              },
+                                ],
+                              ),
                             ),
                           ],
                         ),
