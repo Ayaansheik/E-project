@@ -27,11 +27,14 @@ class RegisterScreenState extends State<RegisterScreen> {
         password.isEmpty ||
         username.isEmpty ||
         phone.isEmpty) {
-      _showSnackbar("Please fill in all fields");
+      _showErrorDialog("Please fill in all fields.");
       return;
     }
 
     try {
+      // Show loading dialog while registering
+      _showLoadingDialog("Registering your account...");
+
       UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
@@ -41,6 +44,7 @@ class RegisterScreenState extends State<RegisterScreen> {
       User? user = userCredential.user;
 
       if (user != null) {
+        // Save user data to Firestore
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'email': email,
           'username': username,
@@ -60,29 +64,96 @@ class RegisterScreenState extends State<RegisterScreen> {
         _usernameController.clear();
         _phoneController.clear();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        // Dismiss loading dialog
+        if (mounted) Navigator.of(context).pop();
+
+        // Show success dialog and redirect to login
+        _showLoadingDialog("Redirecting to Login...");
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          Navigator.of(context).pop();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
+      if (mounted) Navigator.of(context).pop(); // Dismiss loading dialog
       if (e.code == 'weak-password') {
-        _showSnackbar("The password provided is too weak.");
+        _showErrorDialog("The password provided is too weak.");
       } else if (e.code == 'email-already-in-use') {
-        _showSnackbar("The account already exists for that email.");
+        _showErrorDialog("The account already exists for this email.");
       } else {
-        _showSnackbar(e.message ?? "Registration failed.");
+        _showErrorDialog(e.message ?? "Registration failed.");
       }
     } catch (e) {
-      _showSnackbar("An error occurred. Please try again.");
+      if (mounted) Navigator.of(context).pop(); // Dismiss loading dialog
+      _showErrorDialog("An error occurred. Please try again.");
     }
   }
 
-  void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: DevThemeConfig.devPrimaryColor,
+  void _showLoadingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(
+        child: Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    DevThemeConfig.devPrimaryColor,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => AlertDialog(
+        title: const Text(
+          "Error",
+          style: TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text(
+              "OK",
+              style: TextStyle(
+                color: DevThemeConfig.devPrimaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -104,15 +175,6 @@ class RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-          // Blurred frosted glass effect
-          // Positioned.fill(
-          //   child: BackdropFilter(
-          //     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          //     child: Container(
-          //       color: Colors.black.withOpacity(0.3),
-          //     ),
-          //   ),
-          // ),
           SafeArea(
             child: SingleChildScrollView(
               child: Column(
@@ -174,14 +236,12 @@ class RegisterScreenState extends State<RegisterScreen> {
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
-                              context,
                               controller: _emailController,
                               hintText: "Email",
                               icon: Icons.email,
                             ),
                             const SizedBox(height: 15),
                             _buildTextField(
-                              context,
                               controller: _passwordController,
                               hintText: "Password",
                               icon: Icons.lock,
@@ -189,14 +249,12 @@ class RegisterScreenState extends State<RegisterScreen> {
                             ),
                             const SizedBox(height: 15),
                             _buildTextField(
-                              context,
                               controller: _usernameController,
                               hintText: "Username",
                               icon: Icons.person,
                             ),
                             const SizedBox(height: 15),
                             _buildTextField(
-                              context,
                               controller: _phoneController,
                               hintText: "Phone Number",
                               icon: Icons.phone,
@@ -264,15 +322,15 @@ class RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(BuildContext context,
-      {required String hintText,
-      required IconData icon,
-      required TextEditingController controller,
-      bool isPassword = false}) {
+  Widget _buildTextField({
+    required String hintText,
+    required IconData icon,
+    required TextEditingController controller,
+    bool isPassword = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
-      style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
         filled: true,
         fillColor: DevThemeConfig.devPrimaryColor.withOpacity(0.1),

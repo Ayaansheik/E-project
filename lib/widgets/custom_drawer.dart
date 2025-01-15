@@ -22,8 +22,7 @@ class CustomDrawer extends StatelessWidget {
               accountName: Text(
                 'BOOKIFIER',
                 style: TextStyle(
-                  color: theme
-                      .hintColor, // Use the accent color for the account name
+                  color: theme.hintColor,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -51,15 +50,6 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.search, color: theme.hintColor),
-              title: Text('Search New Deals',
-                  style: TextStyle(color: theme.hintColor)),
-              onTap: () {
-                Navigator.of(context).pop(); // Close the drawer
-                Navigator.pushNamed(context, '/new-deals');
-              },
-            ),
-            ListTile(
               leading: Icon(Icons.shopping_cart, color: theme.hintColor),
               title: Text('Cart', style: TextStyle(color: theme.hintColor)),
               onTap: () {
@@ -67,7 +57,6 @@ class CustomDrawer extends StatelessWidget {
                 Navigator.pushNamed(context, '/cart');
               },
             ),
-            // New Order Tracking option
             ListTile(
               leading: Icon(Icons.local_shipping, color: theme.hintColor),
               title: Text('Order Tracking',
@@ -75,7 +64,6 @@ class CustomDrawer extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).pop(); // Close the drawer
                 Navigator.pushNamed(context, '/trackingorder');
-                // Navigator.pushNamed(context, '/order_tracking');
               },
             ),
             ListTile(
@@ -83,7 +71,7 @@ class CustomDrawer extends StatelessWidget {
               title: Text('User', style: TextStyle(color: theme.hintColor)),
               onTap: () {
                 Navigator.of(context).pop(); // Close the drawer
-                Navigator.pushNamed(context, '/cart');
+                Navigator.pushNamed(context, '/userprofile');
               },
             ),
             ListTile(
@@ -96,35 +84,70 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
 
-            // Conditional sign-in options
-            ListTile(
-              leading: Icon(Icons.login, color: theme.hintColor),
-              title: Text('Login', style: TextStyle(color: theme.hintColor)),
-              onTap: () {
-                Navigator.of(context).pop(); // Ensure drawer is closed
-                User? user = FirebaseAuth.instance.currentUser;
-                if (user == null) {
-                  Navigator.pushNamed(context, '/login');
-                } else {
-                  Navigator.pushNamed(context, '/register');
-                }
-              },
-            ),
-
-            // Conditional sign-out option
-            ListTile(
-              leading: Icon(Icons.exit_to_app, color: theme.hintColor),
-              title: Text('Sign Out', style: TextStyle(color: theme.hintColor)),
-              onTap: () async {
-                Navigator.of(context).pop(); // Ensure drawer is closed
-                User? user = FirebaseAuth.instance.currentUser;
-                if (user != null) {
-                  await FirebaseAuth.instance.signOut();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Successfully signed out')),
+            // Login or Sign Out option
+            FutureBuilder<User?>(
+              future: FirebaseAuth.instance.authStateChanges().first,
+              builder: (context, snapshot) {
+                // Show loading spinner while checking user status
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return ListTile(
+                    leading: CircularProgressIndicator(
+                      color: theme.hintColor,
+                    ),
+                    title: Text(
+                      'Loading...',
+                      style: TextStyle(color: theme.hintColor),
+                    ),
                   );
-                  Navigator.pushReplacementNamed(context, '/login');
                 }
+
+                // If user is not logged in, show Login option
+                if (snapshot.data == null) {
+                  return ListTile(
+                    leading: Icon(Icons.login, color: theme.hintColor),
+                    title:
+                        Text('Login', style: TextStyle(color: theme.hintColor)),
+                    onTap: () {
+                      Navigator.of(context).pop(); // Close the drawer
+                      Navigator.pushNamed(context, '/login');
+                    },
+                  );
+                }
+
+                // If user is logged in, show Sign Out option
+                return ListTile(
+                  leading: Icon(Icons.exit_to_app, color: theme.hintColor),
+                  title: Text('Sign Out',
+                      style: TextStyle(color: theme.hintColor)),
+                  onTap: () async {
+                    // Show a loading dialog while signing out
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: theme.hintColor,
+                          ),
+                        );
+                      },
+                    );
+
+                    try {
+                      await FirebaseAuth.instance.signOut();
+                      Navigator.of(context).pop(); // Close the dialog
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Successfully signed out')),
+                      );
+                      Navigator.pushReplacementNamed(context, '/login');
+                    } catch (e) {
+                      Navigator.of(context).pop(); // Close the dialog
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error signing out: $e')),
+                      );
+                    }
+                  },
+                );
               },
             ),
           ],

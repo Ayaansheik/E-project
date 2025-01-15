@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/widgets/bottom_app_bar.dart';
 import 'package:myapp/widgets/custom_drawer.dart';
@@ -16,6 +17,23 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if the user is logged in
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      // If the user is not logged in, redirect to the login screen
+      Future.microtask(() {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+      return const Scaffold(
+        body: Center(
+          child:
+              CircularProgressIndicator(), // Show a loading indicator temporarily
+        ),
+      );
+    }
+
+    // If the user is logged in, show the HomeScreen
     return Scaffold(
       key: _scaffoldKey,
       drawer: CustomDrawer(),
@@ -120,7 +138,7 @@ class HomeScreen extends StatelessWidget {
                   // Author Section are from widget famous_author_section.dart
                   const AuthorSection(),
                   // card are from widgets book_card.dart
-                  BookListWidget(onBookTap: (book) {  },),
+                  BookListWidget(onBookTap: (book) {}),
                 ],
               ),
             ),
