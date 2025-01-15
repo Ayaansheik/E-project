@@ -9,25 +9,6 @@ class AuthorScreen extends StatelessWidget {
 
   AuthorScreen({super.key});
 
-  // Helper method to decode and render base64 images
-  Widget _decodeBase64Image(String? base64String, {double size = 80.0}) {
-    try {
-      if (base64String != null && base64String.isNotEmpty) {
-        return CircleAvatar(
-          radius: size / 2,
-          backgroundImage: MemoryImage(base64Decode(base64String.split(',').last)),
-        );
-      }
-    } catch (e) {
-      print("Error decoding image: $e");
-    }
-    return CircleAvatar(
-      radius: size / 2,
-      backgroundColor: Colors.grey[300],
-      child: Icon(Icons.person, size: size / 2, color: Colors.grey),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +67,6 @@ class AuthorScreen extends StatelessWidget {
                   bio: authorData['bio'] ?? 'No bio available',
                   nationality: authorData['nationality'] ?? 'Unknown',
                   profilePicture: authorData['profilePicture'] ?? '',
-                  isFamous: authorData['isFamous'] ?? false,
                 ),
               );
             },
@@ -102,7 +82,6 @@ class AuthorCard extends StatelessWidget {
   final String bio;
   final String nationality;
   final String profilePicture;
-  final bool isFamous;
 
   const AuthorCard({
     super.key,
@@ -110,7 +89,6 @@ class AuthorCard extends StatelessWidget {
     required this.bio,
     required this.nationality,
     required this.profilePicture,
-    required this.isFamous,
   });
 
   String _truncateBio(String bio) {
@@ -163,11 +141,6 @@ class AuthorCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (isFamous)
-              const Padding(
-                padding: EdgeInsets.only(left: 8.0),
-                child: Icon(Icons.star, color: Colors.amber, size: 24.0),
-              ),
           ],
         ),
       ),
@@ -176,18 +149,20 @@ class AuthorCard extends StatelessWidget {
 
   Widget _decodeBase64Image(String base64String, {double size = 80.0}) {
     try {
-      if (base64String.isNotEmpty) {
+      // Check if the string contains a data URI scheme and strip it
+      final base64Data = base64String.contains(',')
+          ? base64String.split(',')[1]
+          : base64String;
+
+      if (base64Data.isNotEmpty) {
         return CircleAvatar(
           radius: size / 2,
-          backgroundImage: MemoryImage(base64Decode(base64String)),
+          backgroundImage: MemoryImage(base64Decode(base64Data)),
         );
       }
     } catch (e) {
-      return CircleAvatar(
-        radius: size / 2,
-        backgroundColor: Colors.grey[300],
-        child: const Icon(Icons.person, size: 40, color: Colors.grey),
-      );
+      // Optionally, log the error for debugging
+      debugPrint('Error decoding Base64 image: $e');
     }
     return CircleAvatar(
       radius: size / 2,

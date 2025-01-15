@@ -13,7 +13,7 @@ class AuthorDetailScreen extends StatefulWidget {
 
 class AuthorDetailScreenState extends State<AuthorDetailScreen> {
   Map<String, dynamic>? authorData;
-  bool isLoading = true; // Loading state
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -35,15 +35,29 @@ class AuthorDetailScreenState extends State<AuthorDetailScreen> {
     }
 
     try {
-      // Fetch author details from Firestore
       DocumentSnapshot authorSnapshot = await FirebaseFirestore.instance
           .collection('authors')
           .doc(authorId)
           .get();
 
       if (authorSnapshot.exists) {
+        final authorDetails = authorSnapshot.data() as Map<String, dynamic>?;
+        final authorName = authorDetails?['name'];
+
+        QuerySnapshot booksSnapshot = await FirebaseFirestore.instance
+            .collection('books')
+            .where('author', isEqualTo: authorName)
+            .get();
+
+        final booksList = booksSnapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
+
         setState(() {
-          authorData = authorSnapshot.data() as Map<String, dynamic>?;
+          authorData = {
+            ...?authorDetails,
+            'books': booksList,
+          };
           isLoading = false;
         });
       } else {
@@ -92,6 +106,71 @@ class AuthorDetailScreenState extends State<AuthorDetailScreen> {
       height: height,
       color: Colors.grey[300],
       child: Icon(Icons.image, size: width / 2, color: Colors.grey),
+    );
+  }
+
+  Widget buildBookCard(Map<String, dynamic> book) {
+    return Card(
+      elevation: 5,
+      margin: const EdgeInsets.all(8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Book Cover Image
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: decodeBase64Image(
+              book['image'],
+              width: double.infinity,
+              height: 140,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Book Title
+                Text(
+                  book['title'] ?? "No Title",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  book['price'] != null &&
+                          book['price']['amount'] != null &&
+                          book['price']['currency'] != null
+                      ? "${book['price']['currency']} ${book['price']['amount']}"
+                      : "Price not available",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+                // Book Category
+                Text(
+                  book['category'] ?? "Category not available",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -201,42 +280,22 @@ class AuthorDetailScreenState extends State<AuthorDetailScreen> {
                           ),
                         ),
                       ),
-                      authorData?['books'] != null
+                      authorData?['books'] != null &&
+                              (authorData?['books'] as List).isNotEmpty
                           ? GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3, // Show 3 images in a row
+                                crossAxisCount: 2,
                                 crossAxisSpacing: 8.0,
                                 mainAxisSpacing: 8.0,
-                                childAspectRatio: 2 / 3, // Image aspect ratio
+                                childAspectRatio: 3 / 4,
                               ),
                               itemCount: (authorData?['books'] as List).length,
                               itemBuilder: (context, index) {
                                 var book = authorData?['books'][index];
-                                return Column(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: decodeBase64Image(
-                                        book['coverImage'],
-                                        width: 100,
-                                        height: 120,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      book['title'] ?? "No Title",
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                );
+                                return buildBookCard(book);
                               },
                             )
                           : const Padding(

@@ -200,7 +200,9 @@ class CategoryProductCard extends StatelessWidget {
     Uint8List? imageBytes;
     if (imageBase64.isNotEmpty) {
       try {
-        imageBytes = base64Decode(imageBase64);
+        // Remove 'data:image/jpeg;base64,' or similar prefix if it exists
+        final cleanedBase64 = imageBase64.split(',').last;
+        imageBytes = base64Decode(cleanedBase64);
       } catch (e) {
         print('Error decoding image: $e');
       }
