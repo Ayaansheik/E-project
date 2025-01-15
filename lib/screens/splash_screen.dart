@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:myapp/widgets/theme_color.dart';
@@ -19,16 +18,15 @@ class _SplashScreenState extends State<SplashScreen>
   final List<Animation<double>> _iconRotations = [];
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  // Paths for icons
   final List<String> iconPaths = [
-    'https://drive.google.com/uc?export=view&id=1VPMrYdO5Yoxvy8YMw9xPZ9bIRcFEOlyF',
-    'https://drive.google.com/uc?export=view&id=125_AOTLceuWfxBLRDG3pDWbjdoeZqhQk',
-    'https://drive.google.com/uc?export=view&id=1RZSOYfC0yCt3vSndTtJasv5jzSWpL5V2',
-    'https://drive.google.com/uc?export=view&id=15TGgiyWZf5tL9zbnfC_GU6NbzRPuUAW6',
-    'https://drive.google.com/uc?export=view&id=1rPAwoOrwcHQTk3Bzf8c9CXNGuNbfgCnB',
-    'https://drive.google.com/uc?export=view&id=1NG09QwqNvDbfKQW-f7E_khjHYfllxV8-',
-    'https://drive.google.com/uc?export=view&id=1vpVRBCMRrG2hXPRa80K9YpROtC7Qo2sO',
-    'https://drive.google.com/uc?export=view&id=1bbvxtQeIa_rouZYb-dXf_QS0_BU93Omf',
+    'assets/images/cookbook.png',
+    'assets/images/fantasy.png',
+    'assets/images/history.png',
+    'assets/images/idea.png',
+    'assets/images/lawbook.png',
+    'assets/images/money.png',
+    'assets/images/romantic.png',
+    'assets/images/science.png',
   ];
 
   late String _displayText;
@@ -254,11 +252,9 @@ class _SplashScreenState extends State<SplashScreen>
       ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: CachedNetworkImage(
-          imageUrl: assetPath,
+        child: Image.asset(
+          assetPath,
           fit: BoxFit.contain,
-          placeholder: (context, url) => const CircularProgressIndicator(),
-          errorWidget: (context, url, error) => const Icon(Icons.error),
         ),
       ),
     );

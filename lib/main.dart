@@ -14,8 +14,6 @@ import 'screens/register_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/splash_screen.dart';
 import 'firebase_options.dart';
-// ignore: unused_import
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
