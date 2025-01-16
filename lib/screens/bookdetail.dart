@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/screens/similar_books_widget.dart';
 import 'dart:convert';
 
 import 'package:myapp/widgets/theme_color.dart';
@@ -308,56 +309,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
-  Widget _buildSimilarBooksSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Similar Books',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: similarBooks.length,
-            itemBuilder: (context, index) {
-              final book = similarBooks[index];
-              return Container(
-                width: 150,
-                margin: const EdgeInsets.only(right: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: book['image'] != null
-                          ? Image.memory(
-                              base64Decode(book['image'].split(',').last),
-                              height: 120,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            )
-                          : const Icon(
-                              Icons.book,
-                              size: 100,
-                              color: Colors.grey,
-                            ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      book['title'] ?? 'No Title',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+  _buildSimilarBooksSection() {
+    return SimilarBooksWidget(
+      author: widget.book['author'],
+      category: widget.book['category'],
     );
   }
 }
