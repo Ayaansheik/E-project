@@ -121,6 +121,7 @@ class _MyDetailsScreenState extends State<MyDetailsScreen> {
                 onPressed: _updateDetails,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: DevThemeConfig.devPrimaryColor,
+                  foregroundColor: DevThemeConfig.devTextColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),

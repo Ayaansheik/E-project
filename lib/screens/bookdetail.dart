@@ -1,280 +1,261 @@
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
+
+import 'package:myapp/widgets/theme_color.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final Map<String, dynamic> book;
 
-  const BookDetailScreen({super.key, required this.book});
+  const BookDetailScreen({Key? key, required this.book}) : super(key: key);
 
   @override
-  _BookDetailScreenState createState() => _BookDetailScreenState();
+  State<BookDetailScreen> createState() => _BookDetailScreenState();
 }
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
+  Map<String, dynamic>? authorDetails;
+  List<Map<String, dynamic>> similarBooks = [];
   int quantity = 1;
 
-  void incrementQuantity() {
-    setState(() {
-      quantity++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchAuthorDetails(widget.book['author']);
+    _fetchSimilarBooks();
   }
 
-  void decrementQuantity() {
-    setState(() {
-      if (quantity > 1) quantity--;
-    });
+  Future<void> _fetchAuthorDetails(String? authorName) async {
+    if (authorName == null) return;
+
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('authors')
+          .where('name', isEqualTo: authorName)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        setState(() {
+          authorDetails = querySnapshot.docs.first.data();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching author details: $e');
+    }
+  }
+
+  Future<void> _fetchSimilarBooks() async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      QuerySnapshot<Map<String, dynamic>> querySnapshot;
+
+      // Attempt to fetch books by the same author
+      if (widget.book['author'] != null) {
+        querySnapshot = await firestore
+            .collection('books')
+            .where('author', isEqualTo: widget.book['author'])
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          setState(() {
+            similarBooks = querySnapshot.docs.map((doc) => doc.data()).toList();
+          });
+          return;
+        }
+      }
+
+      // Attempt to fetch books in the same category
+      if (widget.book['category'] != null) {
+        querySnapshot = await firestore
+            .collection('books')
+            .where('category', isEqualTo: widget.book['category'])
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          setState(() {
+            similarBooks = querySnapshot.docs.map((doc) => doc.data()).toList();
+          });
+          return;
+        }
+      }
+
+      // Fetch random books if no similar books found
+      querySnapshot = await firestore.collection('books').limit(10).get();
+      setState(() {
+        similarBooks = querySnapshot.docs.map((doc) => doc.data()).toList();
+      });
+    } catch (e) {
+      debugPrint('Error fetching similar books: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final book = widget.book;
-    final price = book['price'] ?? {};
-    final amount = (price['amount'] ?? 0).toDouble(); // Ensure amount is a double
-    final currency = price['currency'] ?? 'USD';
-    final imageBase64 = book['image'] ?? '';
-    final imageBytes =
-        imageBase64.isNotEmpty ? base64Decode(imageBase64.split(',').last) : null;
+    final Uint8List? bookImageBytes = book['image'] != null
+        ? base64Decode(book['image'].split(',').last)
+        : null;
+
+    final Uint8List? authorImageBytes = authorDetails?['profilePicture'] != null
+        ? base64Decode(authorDetails!['profilePicture'].split(',').last)
+        : null;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(book['title'] ?? 'Book Details'),
         centerTitle: true,
-        backgroundColor: const Color(0xFF0D47A1),
+        backgroundColor: DevThemeConfig.devPrimaryColor,
+        foregroundColor: DevThemeConfig.devBackgroundColor,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageCard(imageBytes, book),
+            _buildBookImage(bookImageBytes),
             const SizedBox(height: 20),
-            _buildQuantitySelector(),
+            _buildBookTitleAndAuthor(book, authorImageBytes),
             const SizedBox(height: 20),
-            _buildPriceSection(amount, currency, price),
+            _buildPriceSection(book),
             const SizedBox(height: 20),
-            _buildBookDetails(book),
+            _buildQuantitySection(),
             const SizedBox(height: 20),
             _buildDescription(book['description']),
             const SizedBox(height: 20),
-            _buildRelatedBooksSection(book['author'], book['relatedBooks']),
+            if ((book['reviews'] ?? []).isNotEmpty)
+              _buildReviewSection(book['reviews']),
+            const SizedBox(height: 20),
+            _buildSimilarBooksSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildImageCard(Uint8List? imageBytes, Map<String, dynamic> book) {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
+  Widget _buildBookImage(Uint8List? imageBytes) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: imageBytes != null
+          ? Image.memory(
+              imageBytes,
+              height: 250,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            )
+          : const Icon(
+              Icons.book,
+              size: 150,
+              color: Colors.grey,
             ),
-            child: imageBytes != null
-                ? Image.memory(
-                    imageBytes,
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  )
-                : const Icon(
-                    Icons.book,
-                    size: 150,
-                    color: Colors.grey,
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundImage:
-                      imageBytes != null ? MemoryImage(imageBytes) : null,
-                  radius: 40,
-                  child: imageBytes == null
-                      ? const Icon(Icons.person, size: 40)
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        book['title'] ?? 'No Title',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'By ${book['author'] ?? 'Unknown'}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildQuantitySelector() {
+  Widget _buildBookTitleAndAuthor(
+      Map<String, dynamic> book, Uint8List? authorImageBytes) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        IconButton(
-          icon: const Icon(Icons.remove),
-          onPressed: decrementQuantity,
+        CircleAvatar(
+          backgroundImage:
+              authorImageBytes != null ? MemoryImage(authorImageBytes) : null,
+          radius: 40,
+          child: authorImageBytes == null
+              ? const Icon(Icons.person, size: 40)
+              : null,
         ),
-        Text(
-          '$quantity',
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: incrementQuantity,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPriceSection(double amount, String currency, Map price) {
-    final originalPrice = (price['original'] ?? amount).toDouble();
-    final discountPercentage = price['discount'] ?? 0;
-
-    // Calculate prices based on the quantity
-    final totalOriginalPrice = originalPrice * quantity;
-    final discountAmount = totalOriginalPrice * (discountPercentage / 100);
-    final totalDiscountedPrice = totalOriginalPrice - discountAmount;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Price Details:',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Original Price:',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                book['title'] ?? 'No Title',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            Text(
-              '$currency ${totalOriginalPrice.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 16,
-                decoration: TextDecoration.lineThrough,
-                color: Colors.grey,
+              const SizedBox(height: 4),
+              Text(
+                'By ${book['author'] ?? 'Unknown Author'}',
+                style: const TextStyle(fontSize: 16, color: Colors.black54),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Discount ($discountPercentage%):',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.green,
-              ),
-            ),
-            Text(
-              '- $currency ${discountAmount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.green,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Final Price:',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0D47A1),
-              ),
-            ),
-            Text(
-              '$currency ${totalDiscountedPrice.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0D47A1),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              debugPrint("Buy Now clicked");
-            },
-            icon: const Icon(Icons.shopping_cart),
-            label: const Text('Buy Now'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D47A1),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBookDetails(Map<String, dynamic> book) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPriceSection(Map<String, dynamic> book) {
+    final price = book['price'] ?? {};
+    final amount = (price['amount'] ?? 0).toDouble();
+    final currency = price['currency'] ?? 'USD';
+
+    return Text(
+      '$currency ${amount.toStringAsFixed(2)}',
+      style: const TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: Colors.green,
+      ),
+    );
+  }
+
+  Widget _buildQuantitySection() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          'Book Details',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                if (quantity > 1) {
+                  setState(() {
+                    quantity--;
+                  });
+                }
+              },
+              icon: const Icon(Icons.remove_circle_outline),
+            ),
+            Text(
+              quantity.toString(),
+              style: const TextStyle(fontSize: 18),
+            ),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  quantity++;
+                });
+              },
+              icon: const Icon(Icons.add_circle_outline),
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
-        Text(
-          'Category: ${book['category'] ?? 'N/A'}\n'
-          'Publisher: ${book['publisher'] ?? 'N/A'}\n'
-          'Number of Pages: ${book['pages'] ?? 'N/A'}\n'
-          'Rating: ${book['ratings']?['average'] ?? 'N/A'}\n'
-          'ISBN: ${book['isbn'] ?? 'N/A'}',
-          style: const TextStyle(fontSize: 16),
+        Row(
+          children: [
+            OutlinedButton(
+              onPressed: () {
+                debugPrint("Added to Cart");
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: DevThemeConfig.devSecondaryColor,
+                side: BorderSide(color: DevThemeConfig.devPrimaryColor),
+              ),
+              child: const Text('Add to Cart'),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () {
+                debugPrint("Buy Now clicked");
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DevThemeConfig.devPrimaryColor,
+                foregroundColor: DevThemeConfig.devTextColor,
+              ),
+              child: const Text('Buy Now'),
+            ),
+          ],
         ),
       ],
     );
@@ -291,106 +272,92 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         const SizedBox(height: 10),
         Text(
           description ?? 'No description available.',
-          textAlign: TextAlign.justify,
           style: const TextStyle(fontSize: 16),
+          textAlign: TextAlign.justify,
         ),
       ],
     );
   }
 
-  Widget _buildRelatedBooksSection(String? author, List? relatedBooks) {
-    if (relatedBooks == null || relatedBooks.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Text(
-          'No other books by ${author ?? 'this author'} available.',
-          style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-        ),
-      );
-    }
-
+  Widget _buildReviewSection(List<dynamic> reviews) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'More Books by ${author ?? 'Author'}',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        const Text(
+          'Reviews',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: reviews.length,
+          separatorBuilder: (context, index) => const Divider(),
+          itemBuilder: (context, index) {
+            final review = reviews[index];
+            return ListTile(
+              title: Text(
+                review['name'] ?? 'Anonymous',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(review['comment'] ?? ''),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSimilarBooksSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Similar Books',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
         SizedBox(
           height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: relatedBooks.length,
+            itemCount: similarBooks.length,
             itemBuilder: (context, index) {
-              final book = relatedBooks[index] ?? {};
-              return _buildRelatedBookCard(book);
+              final book = similarBooks[index];
+              return Container(
+                width: 150,
+                margin: const EdgeInsets.only(right: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: book['image'] != null
+                          ? Image.memory(
+                              base64Decode(book['image'].split(',').last),
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            )
+                          : const Icon(
+                              Icons.book,
+                              size: 100,
+                              color: Colors.grey,
+                            ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      book['title'] ?? 'No Title',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildRelatedBookCard(Map book) {
-    final imageUrl = book["image"] ?? '';
-    final title = book["title"] ?? 'N/A';
-    final price = (book["price"]?['amount'] ?? 0).toDouble();
-    final currency = book["price"]?['currency'] ?? 'USD';
-
-    return Card(
-      elevation: 5,
-      margin: const EdgeInsets.only(right: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: imageUrl.isNotEmpty
-                ? Image.memory(
-                    base64Decode(book["image"].split(',').last),
-                    height: 100,
-                    width: 130,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image,
-                      size: 100,
-                      color: Colors.grey,
-                    ),
-                  )
-                : const Icon(
-                    Icons.image,
-                    size: 100,
-                    color: Colors.grey,
-                  ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                overflow: TextOverflow.ellipsis,
-              ),
-              maxLines: 1,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$currency ${price.toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D47A1),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

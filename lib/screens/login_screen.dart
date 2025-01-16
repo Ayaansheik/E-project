@@ -23,96 +23,128 @@ class LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both email and password.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorDialog(
+          title: 'Validation Error',
+          message: 'Please enter both email and password.');
       return;
     }
 
     try {
-      // Attempt to sign in the user
-      // ignore: unused_local_variable
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Fetch the user's document ID from Firestore
       final userDoc = await FirebaseFirestore.instance
-          .collection('users') // Replace with your collection name
+          .collection('users')
           .where('email', isEqualTo: email)
           .get();
 
       if (userDoc.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User document not found.'),
-            backgroundColor: Colors.red,
-          ),
+        _showErrorDialog(
+          title: 'Error',
+          message:
+              'User not found in our records. Please contact support or register.',
         );
         return;
       }
 
       final userId = userDoc.docs.first.id;
-
-      // Store the email and user document ID securely
       await _secureStorage.write(key: 'user_email', value: email);
       await _secureStorage.write(key: 'user_doc_id', value: userId);
 
-      // Show a success message
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('Login successful!'),
-              ],
-            ),
-          );
-        },
-      );
-
-      // Wait for a few seconds, then navigate to the HomeScreen
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.pop(context); // Close the dialog
-        _emailController.clear(); // Reset the email field
-        _passwordController.clear(); // Reset the password field
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      });
+      _showSuccessDialog();
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No user found for that email.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } else if (e.code == 'wrong-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Wrong password provided for that user.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      String errorMessage;
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        errorMessage = 'Incorrect email or password. Please try again.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage =
+            'The email address is invalid. Please check and try again.';
+      } else {
+        errorMessage = 'An unexpected error occurred. Please try again later.';
       }
+
+      _showErrorDialog(title: 'Login Failed', message: errorMessage);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorDialog(
+          title: 'Error',
+          message: 'An unexpected error occurred. Please try again.');
     }
+  }
+
+  void _showErrorDialog({required String title, required String message}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.black87),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('OK', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text(
+                'Logging in...',
+                style: TextStyle(
+                  color: DevThemeConfig.devPrimaryColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    Future.delayed(const Duration(seconds: 2), () {
+      Navigator.pop(context);
+      _emailController.clear();
+      _passwordController.clear();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    });
   }
 
   @override
@@ -122,7 +154,7 @@ class LoginScreenState extends State<LoginScreen> {
         child: Container(
           width: double.infinity,
           height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             image: DecorationImage(
               image: AssetImage('assets/images/bg01.jpg'),
               fit: BoxFit.cover,
@@ -235,7 +267,7 @@ class LoginScreenState extends State<LoginScreen> {
                               child: Text.rich(
                                 TextSpan(
                                   text: "Don't have an account? ",
-                                  style: TextStyle(color: Colors.grey),
+                                  style: const TextStyle(color: Colors.grey),
                                   children: [
                                     TextSpan(
                                       text: "Sign up",
@@ -262,7 +294,6 @@ class LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Common method to build text fields
   Widget _buildTextField(BuildContext context,
       {required String hintText,
       required IconData icon,

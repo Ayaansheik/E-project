@@ -180,16 +180,18 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                         // Decode base64 image if available
                         try {
                           final imageBase64 = book['image'] ?? '';
-                          if (imageBase64.isNotEmpty) {
-                            imageBytes = base64Decode(imageBase64);
+                          if (imageBase64.isNotEmpty &&
+                              imageBase64.startsWith("data:image/")) {
+                            imageBytes =
+                                base64Decode(imageBase64.split(',').last);
                           }
                         } catch (e) {
-                          print(
-                              'Error decoding image for book "${book['title']}": $e');
+                          print('Error decoding image: $e');
                         }
 
                         final price = book['price'] ?? {};
                         final amount = price['amount'] ?? 0;
+                        // ignore: unused_local_variable
                         final currency = price['currency'] ?? 'USD';
 
                         return GestureDetector(
@@ -203,102 +205,87 @@ class _AllProductsScreenState extends State<AllProductsScreen> {
                             );
                           },
                           child: Card(
-                            elevation: 8,
+                            elevation: 12,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 ClipRRect(
                                   borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
+                                    topLeft: Radius.circular(16),
+                                    topRight: Radius.circular(16),
                                   ),
                                   child: imageBytes != null
                                       ? Image.memory(
                                           imageBytes,
-                                          height: 150,
+                                          height: 140,
                                           width: double.infinity,
-                                          fit: BoxFit.contain,
+                                          fit: BoxFit.cover,
                                         )
-                                      : const Icon(
-                                          Icons.book,
-                                          size: 120,
-                                          color: Colors.grey,
+                                      : Container(
+                                          height: 140,
+                                          color: Colors.grey[300],
+                                          child: const Icon(
+                                            Icons.book,
+                                            size: 100,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundColor: Colors.grey[200],
-                                        radius: 20,
-                                        child: const Icon(Icons.person),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              book['title'] ?? 'No Title',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ),
-                                            Text(
-                                              'By ${book['author'] ?? 'Unknown'}',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black54,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 1,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  child: Text(
+                                    book['title'] ?? 'No Title',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                      horizontal: 12),
+                                  child: Text(
+                                    'By ${book['author'] ?? 'Unknown'}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            '$currency ${amount.toStringAsFixed(2)}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF0D47A1),
-                                            ),
-                                          ),
-                                        ],
+                                      Text(
+                                        '${price['currency']} ${amount.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: DevThemeConfig.devPrimaryColor,
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.star,
-                                              color: Colors.amber, size: 16),
-                                          Text(
-                                            (book['rating'] ?? 0).toString(),
-                                            style:
-                                                const TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
+                                      // Column(
+                                      //   children: [
+                                      //     const Icon(Icons.star,
+                                      //         color: Colors.amber, size: 16),
+                                      //     Text(
+                                      //       (book['rating'] ?? 0).toString(),
+                                      //       style:
+                                      //           const TextStyle(fontSize: 14),
+                                      //     ),
+                                      //   ],
+                                      // ),
                                     ],
                                   ),
                                 ),
