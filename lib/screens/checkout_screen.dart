@@ -206,7 +206,7 @@ class CheckoutScreen extends StatelessWidget {
                     'bookID': bookRef,
                     'price': price,
                     'quantity': doc['quantity'],
-                    'status': 'Warehouse',
+                    'status': 'pending',
                     'userID': FirebaseAuth.instance.currentUser!.uid,
                   });
 

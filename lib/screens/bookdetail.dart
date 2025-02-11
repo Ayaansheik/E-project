@@ -9,7 +9,7 @@ import 'package:myapp/widgets/theme_color.dart';
 class BookDetailScreen extends StatefulWidget {
   final Map<String, dynamic> book;
 
-  const BookDetailScreen({Key? key, required this.book}) : super(key: key);
+  const BookDetailScreen({super.key, required this.book});
 
   @override
   State<BookDetailScreen> createState() => _BookDetailScreenState();

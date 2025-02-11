@@ -6,8 +6,7 @@ class SimilarBooksWidget extends StatefulWidget {
   final String? author;
   final String? category;
 
-  const SimilarBooksWidget({Key? key, this.author, this.category})
-      : super(key: key);
+  const SimilarBooksWidget({super.key, this.author, this.category});
 
   @override
   State<SimilarBooksWidget> createState() => _SimilarBooksWidgetState();
